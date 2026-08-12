@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "CustomThumbnail": {
+      "title": "CustomThumbnail",
+      "description": "Custom social sharing thumbnail and card layout configuration for a client",
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "description": "Identifier of the client (e.g. mandk)"
+        },
+        "image": {
+          "type": "string",
+          "description": "Base64 data-URL of the custom thumbnail image"
+        },
+        "posX": {
+          "type": "number",
+          "description": "Horizontal position of the focal point or logo"
+        },
+        "posY": {
+          "type": "number",
+          "description": "Vertical position of the focal point or logo"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of the last update"
+        }
+      },
+      "required": ["clientId", "image", "posX", "posY", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "custom_thumbnails/{clientId}": {
+      "schema": "CustomThumbnail",
+      "description": "Durable storage of custom social share thumbnails per client"
+    }
+  }
+}

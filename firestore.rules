@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Definitions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCustomThumbnail(data) {
+      return data.clientId is string && data.clientId.size() > 0 && data.clientId.size() <= 100
+        && data.image is string && data.image.size() > 0 && data.image.size() <= 15000000
+        && (data.posX is int || data.posX is float) && data.posX >= 0 && data.posX <= 100
+        && (data.posY is int || data.posY is float) && data.posY >= 0 && data.posY <= 100
+        && data.updatedAt is string && data.updatedAt.size() <= 100;
+    }
+
+    // Collection: custom_thumbnails
+    match /custom_thumbnails/{clientId} {
+      allow read, write: if isValidId(clientId);
+    }
+  }
+}

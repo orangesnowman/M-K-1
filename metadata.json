@@ -1,0 +1,6 @@
+{
+  "name": "MandK App",
+  "description": "An intelligent feedback collection and automated review drafting portal for M&K. It features targeted 1-3 sentence AI comment refinement, mandatory feedback validation, Google Sheets recording, and automatic CC-routed Gmail dispatch.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
