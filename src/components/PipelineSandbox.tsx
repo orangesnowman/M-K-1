@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FormConfig, RoutingConfiguration, WorkspaceResources, ReviewRecord, Client } from '../types';
 import { sendGmailEmail, appendFeedbackToSheet } from '../services/googleWorkspace';
-import mkLogo from '../assets/images/mk_logo_1781902335896.jpg';
+import mkLogo from '../assets/images/mk_logo_new.png';
+import wartsLogo from '../assets/images/warts_80s_logo_1786769647096.jpg';
 import pixelRobotHeart from '../assets/images/pixel_robot_heart_1783882654344.jpg';
 import {
   Inbox,
@@ -28,36 +29,37 @@ import {
   Link as LinkIcon,
   X,
   RotateCcw,
-  Settings
+  RefreshCw,
+  Settings,
+  Globe
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
-// Dynamic suggested comments based on numeric star ratings to inspire users and test different branch routes
+// Dynamic suggested comments based on numeric star ratings for musical show spectacles
 const RATING_SUGGESTIONS: Record<number, string[]> = {
   5: [
-    "🛠️ M&K Auto Parts saved me lots of money by sourcing a premium used transmission from their yard and installing it for a fraction of what the dealership quoted.",
-    "⚡ They fixed my car for literally half the price my regular mechanic quoted because they have all the parts right on-site.",
-    "🔍 Their ASE-certified mechanics quickly diagnosed an electrical issue that two other local shops completely missed.",
-    "🌍 They tracked down a rare engine component for me in less than 24 hours using their incredible nationwide parts-locating service."
+    "🎵 ¡Un espectáculo musical verdaderamente inolvidable! La música en vivo, las voces de los artistas y la puesta en escena fueron espectaculares.",
+    "✨ Una producción musical increíble de principio a fin. El sonido, las luces y la energía del elenco hicieron de esta una noche mágica.",
+    "👏 ¡Extraordinario talento en el escenario! Se nota la dedicación y pasión en cada canción e interpretación. Volvería a verlo sin dudarlo.",
+    "🌟 Excelente organización y una acústica impecable. Nos emocionamos muchísimo durante todo el show. ¡Totalmente recomendado!"
   ],
   4: [
-    "📦 After checking yards all over Florida, M&K was the only place that had the exact matching truck door panel I needed in stock.",
-    "🤝 The mechanics here are incredibly trustworthy, explaining my brake issue clearly without trying to upsell me on unnecessary repairs.",
-    "🚗 They hooked me up with a used tire that looked brand new and had me safely back on the road in under 45 minutes.",
-    "⏱️ I dropped my car off in the morning and they sourced the rotors and finished my brake repair before lunch."
+    "🎶 Gran espectáculo musical con excelentes canciones y vestuario. Disfrutamos muchísimo de toda la presentación en vivo.",
+    "🎭 La actuación y las voces fueron maravillosas. Un show muy bien producido y muy entretenido para toda la familia.",
+    "🎤 Muy buena acústica y grandes músicos en escena. Una experiencia artística hermosa.",
+    "⏱️ El evento estuvo muy bien organizado y el flujo de ingreso al recinto fue rápido y ordenado."
   ],
   3: [
-    "💰 They gave me a fair cash offer over the phone for my old sedan and picked it up with a free tow truck the same afternoon.",
-    "🚛 M&K made getting rid of my scrap car completely hassle-free by handling all the paperwork and providing fast, free towing.",
-    "🔧 Found the part I needed, though it took a little longer to locate in the inventory tracker than expected."
+    "🎟️ El espectáculo musical estuvo muy bonito y los artistas demostraron gran talento, aunque el inicio tuvo un pequeño retraso.",
+    "🎼 Buena música y buenas interpretaciones, aunque algunas secciones del show se sintieron algo largas."
   ],
   2: [
-    "⚠️ Sourced the brake calipers okay, but the service queue was backed up and it took much longer than initially promised.",
-    "🔧 Yard carries a huge collection, but the website's listed inventory status wasn't fully up-to-date with actual stock."
+    "⚠️ Los artistas tienen mucho talento, pero el volumen del sonido estuvo demasiado alto y dificultaba escuchar las voces claramente.",
+    "🎭 Buenos cantantes y músicos, aunque la pausa intermedia del show se extendió más de lo esperado."
   ],
   1: [
-    "🚨 Quoted one price on the phone, but when they arrived with the tow truck, they tried to pay less for my scrap car.",
-    "❌ Part was labeled as tested and working, but was dead on arrival when my mechanic opened the box."
+    "⚠️ Problemas con el sonido y la acústica que afectaron la experiencia del show. Espero puedan ajustarlo.",
+    "❗ Demoras en el ingreso y la organización del recinto afectaron la experiencia del espectáculo."
   ]
 };
 
@@ -83,7 +85,16 @@ interface PipelineSandboxProps {
   onAddReview?: (review: Omit<ReviewRecord, 'id' | 'timestamp'>) => void;
   activeClient?: Client;
   onUpdateLogo?: (logoUrl: string) => void;
-  onUpdateHeader?: (updates: { portalTitle?: string; portalSubtitle?: string; logoUrl?: string }) => void;
+  onUpdateHeader?: (updates: {
+    portalTitle?: string;
+    portalSubtitle?: string;
+    logoUrl?: string;
+    titleFont?: string;
+    titleFontSize?: string;
+    titleColor?: string;
+    subtitleColor?: string;
+    appUrl?: string;
+  }) => void;
 }
 
 export default function PipelineSandbox({ 
@@ -110,7 +121,30 @@ export default function PipelineSandbox({
     routingConfig
   };
 
-  // Header Editing States (Title, Subtitle, Logo)
+  // Font family helper
+  const getFontFamilyStyle = (fontKey?: string) => {
+    switch (fontKey) {
+      case 'helvetica':
+        return { fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' };
+      case 'serif':
+        return { fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' };
+      case 'mono':
+        return { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' };
+      case 'impact':
+        return { fontFamily: 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif' };
+      case 'playfair':
+        return { fontFamily: '"Playfair Display", Georgia, serif' };
+      case 'cursive':
+        return { fontFamily: '"Comic Sans MS", "Caveat", cursive' };
+      case 'georgia':
+        return { fontFamily: 'Georgia, serif' };
+      case 'sans':
+      default:
+        return { fontFamily: 'inherit' };
+    }
+  };
+
+  // Header Editing States (Title, Subtitle, Logo, Font, Colors)
   const [isEditingLogo, setIsEditingLogo] = useState(false);
   const [isEditingTitleInline, setIsEditingTitleInline] = useState(false);
   const [inlineTitleInput, setInlineTitleInput] = useState('');
@@ -122,10 +156,75 @@ export default function PipelineSandbox({
   const [modalTitleInput, setModalTitleInput] = useState('');
   const [modalSubtitleInput, setModalSubtitleInput] = useState('');
   const [logoUrlInput, setLogoUrlInput] = useState('');
+  const [titleFontInput, setTitleFontInput] = useState<string>('sans');
+  const [titleFontSizeInput, setTitleFontSizeInput] = useState<string>('24pt');
+  const [titleColorInput, setTitleColorInput] = useState<string>('#dc2626');
+  const [subtitleColorInput, setSubtitleColorInput] = useState<string>('#dc2626');
+  const [customAppUrlInput, setCustomAppUrlInput] = useState<string>('');
+  const [copiedPortalUrl, setCopiedPortalUrl] = useState(false);
   const [logoImageError, setLogoImageError] = useState(false);
 
-  const currentTitle = client.portalTitle || (client.id === 'mandk' ? t('sandbox.title', 'Customer Feedback') : client.name);
-  const currentSubtitle = client.portalSubtitle || (client.id === 'mandk' ? t('sandbox.subtitle', 'We value your experience!') : t('sandbox.subtitleAlt', 'We value your feedback!'));
+  const isWArts = useMemo(() => client.id.toLowerCase().includes('w-arts') || client.name.toLowerCase().includes('w-arts'), [client.id, client.name]);
+  const defaultSheetId = isWArts ? '11gJNsJ4sRLnEMnve_4dnmjuudinUjTsL2cO5zons_oY' : '1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4';
+  const currentTitle = useMemo(() => {
+    if (isWArts) {
+      return client.portalTitle || 'W-Arts';
+    }
+    if (client.id === 'mandk' || client.name.toLowerCase().includes('mandk')) {
+      if (!client.portalTitle || client.portalTitle === 'W-Arts' || client.portalTitle.toLowerCase().includes('w-arts') || client.portalTitle.toLowerCase().includes('espectáculo')) {
+        return t('sandbox.title', 'Customer Feedback');
+      }
+      return client.portalTitle;
+    }
+    return client.portalTitle || client.name;
+  }, [isWArts, client.id, client.name, client.portalTitle, t]);
+
+  const currentSubtitle = useMemo(() => {
+    if (isWArts) {
+      return client.portalSubtitle || '¿Qué le pareció nuestro espectáculo?';
+    }
+    if (client.id === 'mandk' || client.name.toLowerCase().includes('mandk')) {
+      if (!client.portalSubtitle || client.portalSubtitle.toLowerCase().includes('espectáculo') || client.portalSubtitle.toLowerCase().includes('nos son muy importantes')) {
+        return t('sandbox.subtitle', 'We value your experience!');
+      }
+      return client.portalSubtitle;
+    }
+    return client.portalSubtitle || t('sandbox.subtitleAlt', 'We value your feedback!');
+  }, [isWArts, client.id, client.name, client.portalSubtitle, t]);
+
+  const getLivePortalUrl = (clientObj: Client = client) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const baseUrl = origin.includes('-dev-') ? origin.replace('-dev-', '-pre-') : origin;
+
+    if (clientObj.id === 'mandk' || clientObj.name.toLowerCase().includes('mandk')) {
+      if (clientObj.appUrl && clientObj.appUrl.trim() !== '' && !clientObj.appUrl.includes('w-arts') && !clientObj.appUrl.includes('mandk-app') && !clientObj.appUrl.includes('.ai.studio')) {
+        return clientObj.appUrl.trim();
+      }
+      return `${baseUrl}?mode=live&client=mandk`;
+    }
+
+    if (clientObj.id === 'w-arts' || clientObj.name.toLowerCase().includes('w-arts')) {
+      if (clientObj.appUrl && clientObj.appUrl.trim() !== '' && !clientObj.appUrl.includes('mandk') && !clientObj.appUrl.includes('mandk-app') && !clientObj.appUrl.includes('.ai.studio')) {
+        return clientObj.appUrl.trim();
+      }
+      return `${baseUrl}?mode=live&client=w-arts`;
+    }
+
+    if (clientObj.appUrl && clientObj.appUrl.trim() !== '' && !clientObj.appUrl.includes('mandk-app') && !clientObj.appUrl.includes('.ai.studio')) {
+      return clientObj.appUrl.trim();
+    }
+
+    return `${baseUrl}?mode=live&client=${encodeURIComponent(clientObj.id)}`;
+  };
+
+  const getEffectiveGoogleReviewsUrl = () => {
+    if (client.id === 'w-arts' || client.name.toLowerCase().includes('w-arts')) {
+      if (!routingConfig.googleReviewsUrl || routingConfig.googleReviewsUrl.includes('CajrrF4R') || routingConfig.googleReviewsUrl.includes('WszeTv9CV8XWJPor7')) {
+        return 'https://g.page/r/CWU_opvS6RMREAI/review';
+      }
+    }
+    return routingConfig.googleReviewsUrl || (client.id === 'w-arts' || client.name.toLowerCase().includes('w-arts') ? 'https://g.page/r/CWU_opvS6RMREAI/review' : 'https://g.page/r/CajrrF4R_V20EAI/review');
+  };
 
   const handleSaveInlineTitle = () => {
     const val = inlineTitleInput.trim() || currentTitle;
@@ -143,12 +242,34 @@ export default function PipelineSandbox({
     setIsEditingSubtitleInline(false);
   };
 
+  const handleCopyPortalUrl = () => {
+    const urlToCopy = customAppUrlInput.trim() || getLivePortalUrl();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(urlToCopy);
+    }
+    setCopiedPortalUrl(true);
+    setTimeout(() => setCopiedPortalUrl(false), 2000);
+  };
+
   const handleOpenHeaderModal = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setModalTitleInput(currentTitle);
     setModalSubtitleInput(currentSubtitle);
     setLogoUrlInput(client.logoUrl || (client.id === 'mandk' ? mkLogo : ''));
+    setTitleFontInput(client.titleFont || (isWArts ? 'helvetica' : 'sans'));
+    setTitleFontSizeInput(client.titleFontSize || (isWArts ? '32pt' : '18pt'));
+    setTitleColorInput(client.titleColor || '#dc2626');
+    setSubtitleColorInput(client.subtitleColor || '#dc2626');
+    
+    // Automatically populate live app URL if client.appUrl is empty or placeholder
+    const liveUrl = getLivePortalUrl(client);
+    const initialUrl = client.appUrl && client.appUrl.trim() !== ''
+      ? client.appUrl
+      : liveUrl;
+    setCustomAppUrlInput(initialUrl);
+
     setLogoImageError(false);
+    setCopiedPortalUrl(false);
     setIsEditingHeaderModal(true);
   };
 
@@ -157,7 +278,12 @@ export default function PipelineSandbox({
       onUpdateHeader({
         portalTitle: modalTitleInput.trim() || currentTitle,
         portalSubtitle: modalSubtitleInput.trim() || currentSubtitle,
-        logoUrl: logoUrlInput.trim()
+        logoUrl: logoUrlInput.trim(),
+        titleFont: titleFontInput,
+        titleFontSize: titleFontSizeInput,
+        titleColor: titleColorInput,
+        subtitleColor: subtitleColorInput,
+        appUrl: customAppUrlInput.trim()
       });
     } else if (onUpdateLogo) {
       onUpdateLogo(logoUrlInput.trim());
@@ -166,20 +292,25 @@ export default function PipelineSandbox({
   };
 
   const renderPublishedHeader = () => {
-    const displayLogo = client.logoUrl || (client.id === 'mandk' ? mkLogo : null);
+    const displayLogo = isWArts ? null : (client.logoUrl || client.routingConfig?.companyLogoUrl || mkLogo);
+
+    const titleStyle: React.CSSProperties = {
+      ...getFontFamilyStyle(client.titleFont || (isWArts ? 'helvetica' : undefined)),
+      color: client.titleColor || '#dc2626',
+      fontSize: client.titleFontSize || (isWArts ? '32pt' : undefined)
+    };
+
+    const subtitleStyle: React.CSSProperties = {
+      color: client.subtitleColor || '#dc2626'
+    };
 
     return (
-      <div className="flex flex-row items-center gap-4 pb-2 mb-4 group/header-container relative" id="sandbox-card-header">
-        {/* Brand Logo Container with Hover Edit Trigger */}
-        <div className="relative group/logo-container shrink-0">
-          <button
-            onClick={handleOpenHeaderModal}
-            className="group relative cursor-pointer block rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-            title="Click to edit logo, title & subtitle"
-            type="button"
-          >
+      <div className="flex flex-row items-center gap-4 pb-2 mb-4 relative" id="sandbox-card-header">
+        {/* Brand Logo Container (Eliminated for W-Arts) */}
+        {!isWArts && (
+          <div className="shrink-0 select-none">
             {displayLogo ? (
-              <div className="shrink-0 select-none bg-white overflow-hidden h-16 w-16 sm:h-20 sm:w-20 flex items-center justify-center relative rounded-xl border border-slate-100 shadow-2xs">
+              <div className="shrink-0 select-none bg-white overflow-hidden h-16 w-16 sm:h-20 sm:w-20 flex items-center justify-center relative rounded-xl">
                 <img
                   src={displayLogo}
                   alt={`${client.name} Logo`}
@@ -197,145 +328,25 @@ export default function PipelineSandbox({
                 </span>
               </div>
             )}
-
-            {/* Hover Edit Overlay Badge */}
-            <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-1 backdrop-blur-xs">
-              <Edit2 className="w-4 h-4 text-yellow-400 mb-0.5" />
-              <span className="text-[10px] font-bold tracking-tight uppercase">Edit Logo</span>
-            </div>
-          </button>
-        </div>
+          </div>
+        )}
 
         {/* Title & Subtitle */}
         <div className="flex-1 text-left min-w-0">
-          {/* Title row */}
-          {isEditingTitleInline ? (
-            <div className="flex items-center gap-1.5 mb-1">
-              <input
-                type="text"
-                value={inlineTitleInput}
-                onChange={(e) => setInlineTitleInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveInlineTitle();
-                  if (e.key === 'Escape') setIsEditingTitleInline(false);
-                }}
-                className="text-[1.1rem] sm:text-[1.25rem] font-bold px-2 py-1 bg-white border-2 border-red-500 rounded-lg text-zinc-900 focus:outline-none w-full shadow-2xs"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={handleSaveInlineTitle}
-                className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer shrink-0"
-                title="Save Title"
-              >
-                <Check className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditingTitleInline(false)}
-                className="p-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors cursor-pointer shrink-0"
-                title="Cancel"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="group/title relative inline-flex items-center gap-2 max-w-full">
-              <h1
-                onClick={() => {
-                  setInlineTitleInput(currentTitle);
-                  setIsEditingTitleInline(true);
-                }}
-                className={`text-[1.2rem] sm:text-[1.35rem] font-bold tracking-[0.02em] leading-none cursor-pointer hover:opacity-85 transition-all rounded px-1 -ml-1 hover:bg-red-50/80 ${
-                  client.id === 'mandk' ? 'text-[#dc2626]' : 'text-red-650'
-                }`}
-                title="Click to edit title inline"
-              >
-                {currentTitle}
-              </h1>
-              <button
-                type="button"
-                onClick={() => {
-                  setInlineTitleInput(currentTitle);
-                  setIsEditingTitleInline(true);
-                }}
-                className="opacity-0 group-hover/title:opacity-100 transition-opacity p-1 text-slate-400 hover:text-red-600 cursor-pointer rounded hover:bg-red-50"
-                title="Edit Title inline"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+          <h1
+            style={titleStyle}
+            className={isWArts ? "font-extrabold tracking-[0.02em] leading-none" : "text-[1.2rem] sm:text-[1.35rem] font-bold tracking-[0.02em] leading-none"}
+          >
+            {currentTitle}
+          </h1>
 
-          {/* Subtitle row */}
-          {isEditingSubtitleInline ? (
-            <div className="flex items-center gap-1.5 mt-1">
-              <input
-                type="text"
-                value={inlineSubtitleInput}
-                onChange={(e) => setInlineSubtitleInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveInlineSubtitle();
-                  if (e.key === 'Escape') setIsEditingSubtitleInline(false);
-                }}
-                className="text-[0.85rem] sm:text-[0.9rem] font-semibold px-2 py-1 bg-white border-2 border-red-500 rounded-lg text-zinc-900 focus:outline-none w-full shadow-2xs"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={handleSaveInlineSubtitle}
-                className="p-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer shrink-0"
-                title="Save Subtitle"
-              >
-                <Check className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditingSubtitleInline(false)}
-                className="p-1 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors cursor-pointer shrink-0"
-                title="Cancel"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="group/subtitle relative flex items-center gap-1.5 mt-1.5 max-w-full">
-              <p
-                onClick={() => {
-                  setInlineSubtitleInput(currentSubtitle);
-                  setIsEditingSubtitleInline(true);
-                }}
-                className={`text-[0.85rem] sm:text-[0.9rem] leading-none font-semibold cursor-pointer hover:opacity-85 transition-all rounded px-1 -ml-1 hover:bg-red-50/80 ${
-                  client.id === 'mandk' ? 'text-[#dc2626]' : 'text-red-650'
-                }`}
-                title="Click to edit subtitle inline"
-              >
-                {currentSubtitle}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setInlineSubtitleInput(currentSubtitle);
-                  setIsEditingSubtitleInline(true);
-                }}
-                className="opacity-0 group-hover/subtitle:opacity-100 transition-opacity p-0.5 text-slate-400 hover:text-red-600 cursor-pointer rounded hover:bg-red-50"
-                title="Edit Subtitle inline"
-              >
-                <Edit2 className="w-3 h-3" />
-              </button>
-            </div>
-          )}
+          <p
+            style={subtitleStyle}
+            className="text-[0.85rem] sm:text-[0.9rem] leading-none font-semibold mt-1.5"
+          >
+            {currentSubtitle}
+          </p>
         </div>
-
-        {/* Quick Edit Header Settings Button */}
-        <button
-          type="button"
-          onClick={handleOpenHeaderModal}
-          className="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer shrink-0"
-          title="Edit Header & Branding (Logo, Title, Subtitle)"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
       </div>
     );
   };
@@ -354,10 +365,10 @@ export default function PipelineSandbox({
   const randomizedSuggestions = useMemo(() => {
     const result: Record<number, string[]> = {};
     [1, 2, 3, 4, 5].forEach((numKey) => {
-      result[numKey] = shuffleArray(getRatingSuggestions(numKey));
+      result[numKey] = shuffleArray(getRatingSuggestions(numKey, activeClient?.id));
     });
     return result;
-  }, [language]);
+  }, [language, activeClient?.id]);
 
   const [formData, setFormData] = useState<FormConfig>(() => {
     const initialRating = 5;
@@ -401,6 +412,13 @@ export default function PipelineSandbox({
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (token) {
+      setFeedbackError(null);
+      setGmailModalError(null);
+    }
+  }, [token]);
+
   const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
   const [autoSubmitLogs, setAutoSubmitLogs] = useState<string[]>([]);
   const [hasSubmittedAuto, setHasSubmittedAuto] = useState(false);
@@ -424,16 +442,36 @@ export default function PipelineSandbox({
 
   // Enabled platforms based on settings
   const enabledPlatforms = useMemo(() => {
-    const list: { name: string; url: string; color: string; hoverColor: string }[] = [];
-    if (routingConfig.facebookEnabled && routingConfig.facebookUrl) {
+    const list: { name: string; url: string; color: string; hoverColor: string; isEmail?: boolean; isGoogle?: boolean }[] = [];
+    
+    // Google Directory / Google Reviews (Always featured first)
+    const googleReviewsUrl = getEffectiveGoogleReviewsUrl();
+    if (googleReviewsUrl) {
+      list.push({
+        name: isSpanish ? 'Directorio de Google' : 'Google Directory',
+        url: googleReviewsUrl,
+        color: 'bg-[#4285F4]',
+        hoverColor: 'hover:bg-[#3367D6]',
+        isGoogle: true
+      });
+    }
+
+    const fbUrl = isWArts 
+      ? (!routingConfig.facebookUrl || routingConfig.facebookUrl.includes('MKusedautoparts') ? 'https://www.facebook.com/WArtsproducciones/reviews' : routingConfig.facebookUrl)
+      : routingConfig.facebookUrl;
+    const fbEnabled = isWArts ? true : routingConfig.facebookEnabled;
+
+    if (fbEnabled && fbUrl) {
       list.push({ 
         name: 'Facebook', 
-        url: routingConfig.facebookUrl, 
+        url: fbUrl, 
         color: 'bg-[#1877f2]', 
         hoverColor: 'hover:bg-[#115bc5]' 
       });
     }
-    if (routingConfig.yelpEnabled && routingConfig.yelpUrl) {
+
+    const yelpEnabled = isWArts ? false : routingConfig.yelpEnabled;
+    if (yelpEnabled && routingConfig.yelpUrl) {
       list.push({ 
         name: 'Yelp', 
         url: routingConfig.yelpUrl, 
@@ -441,6 +479,7 @@ export default function PipelineSandbox({
         hoverColor: 'hover:bg-[#b01d1d]' 
       });
     }
+
     if (routingConfig.bbbEnabled && routingConfig.bbbUrl) {
       list.push({ 
         name: 'BBB', 
@@ -449,22 +488,32 @@ export default function PipelineSandbox({
         hoverColor: 'hover:bg-[#003d66]' 
       });
     }
+
+    // Always include Email/Correo so it remains tracked in the sharing flow
+    const emailSubject = isSpanish ? "¡Muy Recomendado!" : "Highly Recommend!";
+    const emailBody = formData.comments || (isSpanish ? "¡Comentario altamente recomendado!" : "Highly recommended feedback!");
+    list.push({
+      name: isSpanish ? 'Correo' : 'Email',
+      url: `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`,
+      color: 'bg-slate-700',
+      hoverColor: 'hover:bg-slate-800',
+      isEmail: true
+    });
+
     return list;
-  }, [routingConfig]);
+  }, [routingConfig, isWArts, isSpanish, formData.comments]);
 
   // Remaining platforms to share on
   const remainingPlatforms = useMemo(() => {
     return enabledPlatforms.filter(p => !visitedPlatforms.includes(p.name));
   }, [enabledPlatforms, visitedPlatforms]);
 
-  const handleSharePlatformClick = (platform: { name: string; url: string }) => {
+  const handleSharePlatformClick = (platform: { name: string; url: string; isEmail?: boolean; isGoogle?: boolean }) => {
     try {
-      const win = window.open(platform.url, '_blank');
-      if (win) {
-        win.focus();
-      }
+      window.location.href = platform.url;
     } catch (e) {
-      console.warn("Popup blocked by browser:", e);
+      console.warn("Navigation error:", e);
+      window.location.href = platform.url;
     }
     setVisitedPlatforms(prev => [...prev, platform.name]);
   };
@@ -510,19 +559,31 @@ export default function PipelineSandbox({
     setTimeout(() => setShowCopiedNotification(false), 4400);
   };
 
-  const formatExceptionMessage = (err: any) => {
-    const msg = String(err.message || err);
-    const lower = msg.toLowerCase();
-    if (
+  const isAuthException = (msg: string): boolean => {
+    const lower = String(msg || '').toLowerCase();
+    if (lower.includes('unexpected token') || lower.includes('not valid json') || lower.includes('syntaxerror')) {
+      return false;
+    }
+    return (
       lower.includes('authentication') ||
       lower.includes('credential') ||
       lower.includes('oauth') ||
       lower.includes('unauthorized') ||
-      lower.includes('token') ||
-      msg.includes('401')
-    ) {
+      lower.includes('invalid_grant') ||
+      lower.includes('access_token') ||
+      lower.includes('auth_token') ||
+      lower.includes('expired token') ||
+      lower.includes('token expired') ||
+      lower.includes('401')
+    );
+  };
+
+  const formatExceptionMessage = (err: any) => {
+    const msg = String(err.message || err);
+    if (isAuthException(msg)) {
       return `${msg}. 💡 Help: Google Authorization is expired, missing, or needs fresh permissions! Click "Re-authorize Google" or "Connect Google Account" to refresh your token and accept permissions.`;
     }
+    const lower = msg.toLowerCase();
     if (
       lower.includes('403') ||
       lower.includes('permission') ||
@@ -531,6 +592,67 @@ export default function PipelineSandbox({
       return `${msg}. 💡 Help: You do not have edit permissions for this spreadsheet. If you are using the default template sheet, please click on the "Sheet Feedback" tab and click "Deploy Workflow" or "Re-authorize & Setup" to automatically provision a brand-new personal spreadsheet inside your own Google Drive!`;
     }
     return msg;
+  };
+
+  const getOfflineImprovedText = (text: string, rating: number, isEs: boolean): string => {
+    const cleanComments = text ? text.replace(/["']/g, "").trim() : "";
+    const clientIdNorm = (activeClient?.id || 'mandk').toLowerCase();
+    const isWArts = clientIdNorm.includes('w-arts') || clientIdNorm.includes('warts');
+
+    if (isWArts) {
+      if (isEs) {
+        if (!cleanComments) {
+          return "¡Un espectáculo musical verdaderamente inolvidable! La música en vivo, las voces de los artistas y la puesta en escena fueron sencillamente espectaculares. Totalmente recomendado.";
+        }
+        const lower = cleanComments.toLowerCase();
+        if (lower.includes("sonido") || lower.includes("voz") || lower.includes("voces") || lower.includes("cantante") || lower.includes("canción") || lower.includes("canciones") || lower.includes("música")) {
+          return `${cleanComments}. La calidad del sonido en vivo y el talento vocal del elenco hicieron de esta una presentación realmente memorable.`;
+        }
+        if (lower.includes("escena") || lower.includes("luces") || lower.includes("vestuario") || lower.includes("baile") || lower.includes("teatro") || lower.includes("puesta")) {
+          return `${cleanComments}. La puesta en escena, las luces y la producción general del show estuvieron a un nivel extraordinario.`;
+        }
+        return `${cleanComments}. Una experiencia inolvidable llena de talento musical en vivo y una gran producción escénica.`;
+      }
+
+      if (!cleanComments) {
+        return "A truly unforgettable musical show! The live music, powerful vocals, and stage production were absolutely outstanding. Highly recommended.";
+      }
+      const lower = cleanComments.toLowerCase();
+      if (lower.includes("sound") || lower.includes("vocal") || lower.includes("voice") || lower.includes("singer") || lower.includes("song") || lower.includes("music")) {
+        return `${cleanComments}. The live sound quality and vocal talent made this an exceptional musical performance.`;
+      }
+      if (lower.includes("stage") || lower.includes("light") || lower.includes("costume") || lower.includes("dance") || lower.includes("production")) {
+        return `${cleanComments}. The stage design, lighting, and costume production were top tier throughout the show.`;
+      }
+      return `${cleanComments}. An incredible musical show experience with amazing live talent and great stage energy.`;
+    }
+
+    // Default for M&K Auto Parts & Junkyard
+    if (isEs) {
+      if (!cleanComments) {
+        return "¡Excelente servicio y gran variedad de repuestos para autos en M&K! Conseguí la parte exacta que necesitaba a muy buen precio. Totalmente recomendado.";
+      }
+      const lower = cleanComments.toLowerCase();
+      if (lower.includes("pieza") || lower.includes("repuesto") || lower.includes("parte") || lower.includes("partes") || lower.includes("motor") || lower.includes("carro") || lower.includes("auto")) {
+        return `${cleanComments}. Las autopartes son de gran calidad y el catálogo de repuestos es muy completo.`;
+      }
+      if (lower.includes("atención") || lower.includes("mostrador") || lower.includes("servicio") || lower.includes("personal") || lower.includes("vendedor")) {
+        return `${cleanComments}. La atención en el mostrador fue rápida, amable y muy profesional.`;
+      }
+      return `${cleanComments}. Gran variedad de partes de autos, precios justos y excelente atención al cliente en M&K.`;
+    }
+
+    if (!cleanComments) {
+      return "Excellent service and selection of auto parts at M&K! Found the exact part I needed for my vehicle at a fair price. Highly recommended.";
+    }
+    const lower = cleanComments.toLowerCase();
+    if (lower.includes("part") || lower.includes("parts") || lower.includes("car") || lower.includes("auto") || lower.includes("vehicle") || lower.includes("engine")) {
+      return `${cleanComments}. The auto parts are high quality and they have a huge inventory selection.`;
+    }
+    if (lower.includes("service") || lower.includes("staff") || lower.includes("counter") || lower.includes("help")) {
+      return `${cleanComments}. The counter staff was quick, knowledgeable, and very helpful.`;
+    }
+    return `${cleanComments}. Great selection of quality auto parts, fair prices, and fast customer service at M&K.`;
   };
 
   const handleGenerateSeoSuggestion = async () => {
@@ -546,32 +668,53 @@ export default function PipelineSandbox({
         body: JSON.stringify({ 
           rating: formData.rating,
           currentComments: formData.comments,
-          language: language
+          language: language,
+          clientName: activeClient?.name,
+          clientId: activeClient?.id,
+          portalTitle: activeClient?.portalTitle,
+          portalSubtitle: activeClient?.portalSubtitle
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate SEO review suggestion.');
+      let data: any = null;
+      try {
+        const text = await response.text();
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        // Response was not JSON (e.g. server HTML error page or offline state)
       }
 
-      if (data.suggestion) {
+      if (data && data.suggestion) {
         setFormData((prev) => ({
           ...prev,
           comments: data.suggestion,
         }));
         setValidationError(null);
-        
-        // The text is placed into the form field, and the user can copy/submit it with a clear single click
         setShowCopiedNotification(false);
-
-        // Copy the newly generated AI suggestion directly to clipboard & display under "Click again..."
         copyTextToClipboard(data.suggestion);
+        setShowAiCopiedBanner(true);
+      } else {
+        // Fallback gracefully to offline contextual musical suggestion generator
+        const fallbackText = getOfflineImprovedText(formData.comments, formData.rating, language === 'es');
+        setFormData((prev) => ({
+          ...prev,
+          comments: fallbackText,
+        }));
+        setValidationError(null);
+        setShowCopiedNotification(false);
+        copyTextToClipboard(fallbackText);
         setShowAiCopiedBanner(true);
       }
     } catch (err: any) {
-      console.error(err);
-      setFeedbackError(err.message || 'Error occurred while contacting Gemini AI.');
+      console.warn('Network issue contacting Gemini API endpoint, using offline fallback:', err);
+      const fallbackText = getOfflineImprovedText(formData.comments, formData.rating, language === 'es');
+      setFormData((prev) => ({
+        ...prev,
+        comments: fallbackText,
+      }));
+      setValidationError(null);
+      copyTextToClipboard(fallbackText);
+      setShowAiCopiedBanner(true);
     } finally {
       setIsGeneratingSeo(false);
     }
@@ -580,11 +723,28 @@ export default function PipelineSandbox({
   // Parse Subject string with name/comments replacements (keeps emoji stars intact for rendering)
   const parseSubject = (template: string, rating: number) => {
     const firstName = formData.name ? formData.name.trim().split(/\s+/)[0] : '';
-    return template
-      .replace(/\${name}/g, firstName)
-      .replace(/\${comments}/g, getEffectiveComments() || '(No comments provided)')
-      .replace(/\${rating}/g, `${rating} Star${rating > 1 ? 's' : ''}`)
-      .replace(/\${googleReviewsUrl}/g, routingConfig.googleReviewsUrl || 'https://g.page/r/CajrrF4R_V20EAI/review');
+    let activeTemplate = template;
+
+    if (isSpanish) {
+      if (template.includes('means the world') || template.includes('feedback means')) {
+        activeTemplate = '¡Tu opinión significa mucho para nosotros, ${name}! ⭐';
+      } else if (template.includes('value your input') || template.includes('We value')) {
+        activeTemplate = '¡Valoramos mucho tus comentarios, ${name}! ⭐';
+      } else if (template.includes('Regarding your recent') || template.includes('Regarding your')) {
+        activeTemplate = 'Respecto a tu experiencia reciente, ${name}';
+      } else if (template.includes('concern regarding') || template.includes('We are concern')) {
+        activeTemplate = '${name}, nos preocupa tu experiencia reciente';
+      }
+    }
+
+    const noCommentsStr = isSpanish ? '(Sin comentarios proporcionados)' : '(No comments provided)';
+    const starStr = isSpanish ? `${rating} Estrella${rating > 1 ? 's' : ''}` : `${rating} Star${rating > 1 ? 's' : ''}`;
+
+    return activeTemplate
+      .replace(/\${name}/g, firstName || (isSpanish ? 'Cliente' : 'Customer'))
+      .replace(/\${comments}/g, getEffectiveComments() || noCommentsStr)
+      .replace(/\${rating}/g, starStr)
+      .replace(/\${googleReviewsUrl}/g, getEffectiveGoogleReviewsUrl());
   };
 
   // Parse HTML Body with name/comments replacements
@@ -592,16 +752,75 @@ export default function PipelineSandbox({
     const firstName = formData.name ? formData.name.trim().split(/\s+/)[0] : '';
     const yellowStarSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: -3px; margin-right: 4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 
-    const formattedSignature = (routingConfig.businessSignature || 'Warmest regards,\nThe M&K Customer Team')
+    let defaultSig = routingConfig.businessSignature;
+    if (isSpanish && (!defaultSig || defaultSig === 'Warmest regards,\nThe M&K Customer Team')) {
+      defaultSig = 'Un saludo cálido,\nEl equipo de M&K';
+    } else if (isSpanish && defaultSig) {
+      defaultSig = defaultSig.replace('Un saludo calido', 'Un saludo cálido');
+    }
+
+    const formattedSignature = (defaultSig || (isSpanish ? 'Un saludo cálido,\nEl equipo de M&K' : 'Warmest regards,\nThe M&K Customer Team'))
       .trim()
       .replace(/\n/g, '<br/>');
 
-    let parsed = template
+    let activeTemplate = template;
+    if (isSpanish) {
+      if (template.includes('Outstanding, thank you')) {
+        activeTemplate = `<div style="font-family: 'Times New Roman', Times, serif; line-height: 25px; font-size: 17px; color: #000000; max-width: 600px; margin: 0 auto; padding: 25px; border: none; border-radius: 16px; background: #ffffff;">
+  <h2 style="color: #000000; margin-top: 0; margin-bottom: 16px; font-size: 20px; font-weight: 700; font-family: 'Times New Roman', Times, serif; line-height: 25px;">⭐ ¡Excelente, muchas gracias \${name}!</h2>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Hola <strong>\${name}</strong>,</p>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Muchas gracias por tomarte el tiempo de compartir tu experiencia. ¡Estamos absolutamente encantados de recibir tu <strong>calificación de 5 Estrellas!</strong> Tus comentarios motivan a nuestro equipo:</p>
+  <div style="background: #f5f0e6; padding: 12px 18px; margin: 18px 0; border-radius: 6px; color: #000000; font-weight: bold; font-style: italic; font-size: 17px; line-height: 25px;">
+    "\${comments}"
+  </div>
+  <p style="font-size: 17px; line-height: 25px; color: #000000; margin-top: 25px; margin-bottom: 0;">\${signature}</p>
+</div>`;
+      } else if (template.includes('Wonderful! Thank you')) {
+        activeTemplate = `<div style="font-family: 'Times New Roman', Times, serif; line-height: 25px; font-size: 17px; color: #000000; max-width: 600px; margin: 0 auto; padding: 25px; border: none; border-radius: 16px; background: #ffffff;">
+  <h2 style="color: #000000; margin-top: 0; margin-bottom: 16px; font-size: 20px; font-weight: 700; font-family: 'Times New Roman', Times, serif; line-height: 25px;">⭐ ¡Maravilloso! Muchas gracias, \${name}</h2>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Hola <strong>\${name}</strong>,</p>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Vimos que nos diste una <strong>calificación de 4 Estrellas</strong>. ¡Muchas gracias por tu apoyo! Trabajamos constantemente para mejorar y tus comentarios son muy valiosos:</p>
+  <div style="background: #f5f0e6; padding: 12px 18px; margin: 18px 0; border-radius: 6px; color: #000000; font-weight: bold; font-style: italic; font-size: 17px; line-height: 25px;">
+    "\${comments}"
+  </div>
+  <p style="font-size: 17px; line-height: 25px; color: #000000; margin-top: 25px; margin-bottom: 0;">\${signature}</p>
+</div>`;
+      } else if (template.includes('We want to make this right')) {
+        activeTemplate = `<div style="font-family: 'Times New Roman', Times, serif; line-height: 25px; font-size: 17px; color: #000000; max-width: 600px; margin: 0 auto; padding: 25px; border: none; border-radius: 16px; background: #ffffff;">
+  <h2 style="color: #000000; margin-top: 0; margin-bottom: 16px; font-size: 20px; font-weight: 700; font-family: 'Times New Roman', Times, serif; line-height: 25px;">Queremos solucionar esto</h2>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Hola <strong>\${name}</strong>,</p>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Gracias por enviar tu <strong>calificación de 3 Estrellas</strong>. Apreciamos tus comentarios, pero lamentamos haber brindado solo una experiencia satisfactoria en lugar de una perfecta.</p>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Hemos guardado tus comentarios:</p>
+  <div style="background: #f5f0e6; padding: 12px 18px; margin: 18px 0; border-radius: 6px; color: #000000; font-weight: bold; font-style: italic; font-size: 17px; line-height: 25px;">
+    "\${comments}"
+  </div>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">¿Qué podemos hacer para que tu próxima experiencia sea de 5 estrellas? Responde directamente a este correo para comunicarte con un supervisor.</p>
+  <p style="font-size: 17px; line-height: 25px; color: #000000; margin-top: 25px; margin-bottom: 0;">\${signature}</p>
+</div>`;
+      } else if (template.includes('A Sincere Apology')) {
+        activeTemplate = `<div style="font-family: 'Times New Roman', Times, serif; line-height: 25px; font-size: 17px; color: #000000; max-width: 600px; margin: 0 auto; padding: 25px; border: none; border-radius: 16px; background: #ffffff;">
+  <h2 style="color: #000000; margin-top: 0; margin-bottom: 16px; font-size: 20px; font-weight: 700; font-family: 'Times New Roman', Times, serif; line-height: 25px;">Una Sincera Disculpa</h2>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Estimado/a <strong>\${name}</strong>,</p>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Gracias por tomarte el tiempo de compartir tu reseña. Nos entristece ver tu calificación de <strong>\${rating}</strong> y leer sobre tu experiencia reciente:</p>
+  <div style="background: #f5f0e6; padding: 12px 18px; margin: 18px 0; border-radius: 6px; color: #000000; font-weight: bold; font-style: italic; font-size: 17px; line-height: 25px;">
+    "\${comments}"
+  </div>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Esto no cumple con nuestros estándares principales. Nos encantaría solucionar esto lo antes posible.</p>
+  <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Por favor, responde a este correo o indícanos un horario conveniente para una llamada telefónica.</p>
+  <p style="font-size: 17px; line-height: 25px; color: #000000; margin-top: 25px; margin-bottom: 0;">\${signature}</p>
+</div>`;
+      }
+    }
+
+    const noCommentsStr = isSpanish ? '(Sin comentarios proporcionados)' : '(No comments provided)';
+    const starStr = isSpanish ? `${rating} Estrella${rating > 1 ? 's' : ''}` : `${rating} Star${rating > 1 ? 's' : ''}`;
+
+    let parsed = activeTemplate
       .replace(/(🌟|⭐)/g, yellowStarSvg)
-      .replace(/\${name}/g, firstName)
-      .replace(/\${comments}/g, getEffectiveComments() || '(No comments provided)')
-      .replace(/\${rating}/g, `${rating} Star${rating > 1 ? 's' : ''}`)
-      .replace(/\${googleReviewsUrl}/g, routingConfig.googleReviewsUrl || 'https://g.page/r/CajrrF4R_V20EAI/review')
+      .replace(/\${name}/g, firstName || (isSpanish ? 'Cliente' : 'Customer'))
+      .replace(/\${comments}/g, getEffectiveComments() || noCommentsStr)
+      .replace(/\${rating}/g, starStr)
+      .replace(/\${googleReviewsUrl}/g, getEffectiveGoogleReviewsUrl())
       .replace(/\${signature}/g, formattedSignature);
 
     // Transform font family, font size, line height and clean up borders
@@ -722,15 +941,18 @@ export default function PipelineSandbox({
 
     const logs: string[] = [];
 
+    const defaultSheetId = isWArts ? '11gJNsJ4sRLnEMnve_4dnmjuudinUjTsL2cO5zons_oY' : '1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4';
+    const effectiveSheetId = resources.spreadsheetId || defaultSheetId;
+
     // A. Record to Sheet
     if (token) {
-      if (resources.spreadsheetId) {
+      if (sheetEnabled && effectiveSheetId) {
         try {
           logs.push(`📝 Appending row to Sheet: "${formData.name}", ${formData.rating} Stars...`);
           setAutoSubmitLogs([...logs]);
           await appendFeedbackToSheet(
             token,
-            resources.spreadsheetId,
+            effectiveSheetId,
             formData.name,
             formData.email,
             formData.rating,
@@ -746,34 +968,39 @@ export default function PipelineSandbox({
           setFeedbackError(`Sheet Append Error: ${prettyErr}`);
         }
       } else {
-        logs.push(`ℹ️ Google Sheet database is offline. Skipping row record.`);
+        logs.push(`ℹ️ Google Sheet logging skipped (Sheet toggle OFF or no Sheet configured).`);
         setAutoSubmitLogs([...logs]);
       }
 
       // B. Send Gmail Responder
-      try {
-        const ccEmail = routingConfig.supportEmail;
-        logs.push(`✉️ Routing response to client address: ${formData.email}${ccEmail ? ` (CC: ${ccEmail})` : ''}...`);
-        setAutoSubmitLogs([...logs]);
-        await sendGmailEmail(token, formData.email, subject, body, ccEmail);
-        logs.push(`✅ Auto-responder Gmail sent successfully.`);
-        setEmailSuccess(true);
-        setAutoSubmitLogs([...logs]);
+      if (emailEnabled) {
+        try {
+          const ccEmail = routingConfig.supportEmail;
+          logs.push(`✉️ Routing response to client address: ${formData.email}${ccEmail ? ` (CC: ${ccEmail})` : ''}...`);
+          setAutoSubmitLogs([...logs]);
+          await sendGmailEmail(token, formData.email, subject, body, ccEmail);
+          logs.push(`✅ Auto-responder Gmail sent successfully.`);
+          setEmailSuccess(true);
+          setAutoSubmitLogs([...logs]);
 
-        // C. If poor rating, send escalation alert
-        if (alertSupport && routingConfig.supportEmail) {
-          logs.push(`🚨 Escalating notification email to support: ${routingConfig.supportEmail}...`);
+          // C. If poor rating, send escalation alert
+          if (alertSupport && routingConfig.supportEmail) {
+            logs.push(`🚨 Escalating notification email to support: ${routingConfig.supportEmail}...`);
+            setAutoSubmitLogs([...logs]);
+            const alertBody = `⚠️ URGENT ESCALATION: Negative Feedback received from ${formData.name}. Ratings: ${formData.rating} Stars. Comments: ${getEffectiveComments()}`;
+            await sendGmailEmail(token, routingConfig.supportEmail, '⚠️ URGENT ESCALATION: Poor customer feedback', alertBody);
+            logs.push(`✅ Escalation alert dispatched successfully.`);
+            setAutoSubmitLogs([...logs]);
+          }
+        } catch (err: any) {
+          const prettyErr = formatExceptionMessage(err);
+          logs.push(`⚠️ Failed sending response email: ${prettyErr}`);
           setAutoSubmitLogs([...logs]);
-          const alertBody = `⚠️ URGENT ESCALATION: Negative Feedback received from ${formData.name}. Ratings: ${formData.rating} Stars. Comments: ${getEffectiveComments()}`;
-          await sendGmailEmail(token, routingConfig.supportEmail, '⚠️ URGENT ESCALATION: Poor customer feedback', alertBody);
-          logs.push(`✅ Escalation alert dispatched successfully.`);
-          setAutoSubmitLogs([...logs]);
+          setFeedbackError((prev) => prev ? `${prev} | Email Error: ${prettyErr}` : `Email Error: ${prettyErr}`);
         }
-      } catch (err: any) {
-        const prettyErr = formatExceptionMessage(err);
-        logs.push(`⚠️ Failed sending response email: ${prettyErr}`);
+      } else {
+        logs.push(`ℹ️ Real email dispatch skipped (Email toggle OFF).`);
         setAutoSubmitLogs([...logs]);
-        setFeedbackError((prev) => prev ? `${prev} | Email Error: ${prettyErr}` : `Email Error: ${prettyErr}`);
       }
     } else {
       // No token
@@ -815,32 +1042,31 @@ export default function PipelineSandbox({
         email: formData.email,
         rating: formData.rating,
         comments: effectiveComments,
-        status: (token && resources.spreadsheetId) ? 'synced' : 'local'
+        status: (token && (resources.spreadsheetId || defaultSheetId)) ? 'synced' : 'local'
       });
     }
 
-    if (isCurrentlyPublished) {
-      if (isPositive) {
-        try {
-          const reviewUrl = routingConfig.googleReviewsUrl || "https://g.page/r/CajrrF4R_V20EAI/review";
-          const win = window.open(reviewUrl, '_blank');
-          if (win) {
-            win.focus();
-          }
-        } catch (e) {
-          console.warn("Direct navigation / popup was blocked by browser:", e);
-        }
+    if (!isPositive) {
+      try {
+        const isWArts = (activeClient?.id === 'w-arts' || client?.id === 'w-arts' || activeClient?.name?.toLowerCase().includes('w-arts') || client?.name?.toLowerCase().includes('w-arts'));
+        const wArtsFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLScp9SPrWmwS5uIMnoqA6COnlJtCz4ss7z2okS0WkOaM96mBMQ/viewform";
+        const mkFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSc_LogQ1N6I7x2FQyva007AOdoa-BPcYc886Gxz207WWBccyA/viewform";
+        const privateFormUrl = isWArts ? wArtsFormUrl : mkFormUrl;
+        window.location.href = privateFormUrl;
+      } catch (e) {
+        console.warn("Direct navigation error:", e);
       }
-      handleAutoSubmit();
     } else {
-      handleSimulateRouting();
-      // Set hasSubmittedAuto to true in simulator so the developer can interact with the congrats screen
-      setHasSubmittedAuto(true);
-      // Proactively trigger Sheet append automatically if Google account is connected
-      if (token && resources.spreadsheetId) {
-        handleAppendToRealSheet();
+      try {
+        const reviewUrl = getEffectiveGoogleReviewsUrl();
+        window.location.href = reviewUrl;
+      } catch (e) {
+        console.warn("Direct navigation error:", e);
       }
     }
+
+    // Trigger full auto submission (Sheet append & Gmail sending) for both simulator and published mode
+    handleAutoSubmit();
   };
 
   const triggerAppendToRealSheet = () => {
@@ -853,9 +1079,10 @@ export default function PipelineSandbox({
     setSheetLoading(true);
     setFeedbackError(null);
     try {
+      const targetSheetId = resources.spreadsheetId || defaultSheetId;
       await appendFeedbackToSheet(
         token!,
-        resources.spreadsheetId!,
+        targetSheetId,
         formData.name,
         formData.email,
         formData.rating,
@@ -904,10 +1131,33 @@ export default function PipelineSandbox({
     }
   };
 
+  const [showAppUpdatedToast, setShowAppUpdatedToast] = useState(false);
+
+  const handleResetForm = () => {
+    setHasSubmittedAuto(false);
+    setFormData({
+      name: 'Federico',
+      email: 'theorangesnowman@gmail.com',
+      rating: 5,
+      comments: ''
+    });
+    setVisitedPlatforms([]);
+    setHasFinishedSharing(false);
+    setValidationError(null);
+    setShowAiCopiedBanner(false);
+    setShowCopiedNotification(false);
+  };
+
+  const handleUpdateApp = () => {
+    handleResetForm();
+    setShowAppUpdatedToast(true);
+    setTimeout(() => setShowAppUpdatedToast(false), 3000);
+  };
+
   const showRightColumn = !isCurrentlyPublished;
 
   return (
-    <div className="p-0 border-none bg-transparent shadow-none pt-2 sm:pt-4" id="sandbox-section">
+    <div className="p-0 border-none bg-transparent shadow-none" id="sandbox-section">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Dynamic Simulator Inputs */}
@@ -922,7 +1172,7 @@ export default function PipelineSandbox({
                     const displayName = formData.name && formData.name.trim() ? formData.name.trim().split(' ')[0] : '';
 
                     if (!isPositive) {
-                      // Negative rating: show the direct private feedback Thank You card
+                      // Negative rating: direct private feedback Thank You card (redirection handled automatically)
                       return (
                         <div className={isCurrentlyPublished ? "space-y-5" : "bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left space-y-5"} id="negative-feedback-thanks">
                           <div className="w-16 h-16 bg-red-50 text-[#dc2626] rounded-full flex items-center justify-center">
@@ -935,19 +1185,6 @@ export default function PipelineSandbox({
                             <p className="text-sm text-slate-500 max-w-md leading-relaxed text-left">
                               {t('sandbox.privateFeedbackDesc', 'Your comments have been sent directly to our management team to help us improve. We truly appreciate your valuable feedback!')}
                             </p>
-                          </div>
-                          <div className="pt-2 text-left">
-                            <button
-                              onClick={() => {
-                                setHasSubmittedAuto(false);
-                                setVisitedPlatforms([]);
-                                setHasFinishedSharing(false);
-                                setFormData(prev => ({ ...prev, comments: '' }));
-                              }}
-                              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-all active:scale-95 animate-fade-in"
-                            >
-                              {t('sandbox.submitAnother', 'Submit Another Feedback')}
-                            </button>
                           </div>
                         </div>
                       );
@@ -968,19 +1205,6 @@ export default function PipelineSandbox({
                             <p className="text-sm text-slate-500 max-w-md leading-relaxed text-left">
                               {t('sandbox.recordedDesc', 'Your review has been successfully recorded and shared. We are extremely grateful for your support!')}
                             </p>
-                          </div>
-                          <div className="pt-2 text-left">
-                            <button
-                              onClick={() => {
-                                setHasSubmittedAuto(false);
-                                setVisitedPlatforms([]);
-                                setHasFinishedSharing(false);
-                                setFormData(prev => ({ ...prev, comments: '' }));
-                              }}
-                              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-all active:scale-95"
-                            >
-                              {t('sandbox.submitAnother', 'Submit Another Feedback')}
-                            </button>
                           </div>
                         </div>
                       );
@@ -1005,11 +1229,22 @@ export default function PipelineSandbox({
                           </div>
 
                           <div className="space-y-3 max-w-sm pt-2 text-left">
-                            <p className={isCurrentlyPublished ? "text-[11px] text-slate-400 font-bold uppercase tracking-wider text-left" : "text-[11px] text-white font-normal uppercase tracking-wider text-left"}>CHOOSE A PLATFORM</p>
+                            <p className={isCurrentlyPublished ? "text-[11px] text-slate-400 font-bold uppercase tracking-wider text-left" : "text-[11px] text-white font-normal uppercase tracking-wider text-left"}>{t('sandbox.choosePlatform', 'CHOOSE A PLATFORM')}</p>
                             <div className="flex flex-row justify-start gap-4 items-center flex-wrap">
                               {remainingPlatforms.map((platform) => {
                                 let IconComponent = null;
-                                if (platform.name === 'Facebook') {
+                                if (platform.isGoogle || platform.name.includes('Google') || platform.name.includes('Directorio')) {
+                                  IconComponent = (
+                                    <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24">
+                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                      </svg>
+                                    </div>
+                                  );
+                                } else if (platform.name === 'Facebook') {
                                   IconComponent = (
                                     <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
                                       <Facebook className="w-4 h-4 fill-[#1877f2] text-[#1877f2]" />
@@ -1019,6 +1254,12 @@ export default function PipelineSandbox({
                                   IconComponent = (
                                     <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
                                       <Star className="w-4 h-4 fill-[#d32323] text-[#d32323]" />
+                                    </div>
+                                  );
+                                } else if (platform.isEmail || platform.name === 'Correo' || platform.name === 'Email') {
+                                  IconComponent = (
+                                    <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
+                                      <Mail className="w-4 h-4 text-slate-700" />
                                     </div>
                                   );
                                 } else {
@@ -1043,19 +1284,6 @@ export default function PipelineSandbox({
                                   </button>
                                 );
                               })}
-
-                              {/* Third Option: Share via Email */}
-                              <a
-                                href={`mailto:?subject=${encodeURIComponent("Highly Recommend!")}&body=${encodeURIComponent(formData.comments || "Highly recommended feedback!")}`}
-                                className={isCurrentlyPublished 
-                                  ? "px-4 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-3xs select-none"
-                                  : "text-sm font-normal text-yellow-400 hover:text-yellow-300 hover:underline transition-all cursor-pointer flex items-center gap-2 select-none"}
-                              >
-                                <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
-                                  <Mail className="w-4 h-4 text-slate-700" />
-                                </div>
-                                <span>Email</span>
-                              </a>
                             </div>
                           </div>
                         </div>
@@ -1070,18 +1298,29 @@ export default function PipelineSandbox({
                           <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
                             <Share2 className="w-5 h-5" />
                           </div>
-                          <h3 className={isCurrentlyPublished ? "text-xl font-bold text-slate-950 text-left" : "text-xl font-normal text-white font-sans text-left"}>Awesome!</h3>
+                          <h3 className={isCurrentlyPublished ? "text-xl font-bold text-slate-950 text-left" : "text-xl font-normal text-white font-sans text-left"}>{t('sandbox.awesome', 'Awesome!')}</h3>
                         </div>
                         <div className="space-y-3">
                           <p className={isCurrentlyPublished ? "text-sm text-slate-500 max-w-md leading-relaxed text-left" : "text-sm text-white max-w-md leading-relaxed font-normal text-left"}>
-                            Gently, would you also like to share your review on <strong className={isCurrentlyPublished ? "text-slate-800 font-bold" : "text-white font-normal"}>{nextPlatform.name}</strong>? Your review text is still copied in your clipboard.
+                            {t('sandbox.gentlyShare', 'Gently, would you also like to share your review on {platform}? Your review text is still copied in your clipboard.', { platform: nextPlatform.name })}
                           </p>
                         </div>
 
                         <div className="space-y-3 max-w-xs pt-2 text-left">
                           {(() => {
                             let IconComponent = null;
-                            if (nextPlatform.name === 'Facebook') {
+                            if (nextPlatform.isGoogle || nextPlatform.name.includes('Google') || nextPlatform.name.includes('Directorio')) {
+                              IconComponent = (
+                                <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
+                                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                  </svg>
+                                </div>
+                              );
+                            } else if (nextPlatform.name === 'Facebook') {
                               IconComponent = (
                                 <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
                                   <Facebook className="w-4 h-4 fill-[#1877f2] text-[#1877f2]" />
@@ -1091,6 +1330,12 @@ export default function PipelineSandbox({
                               IconComponent = (
                                 <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
                                   <Star className="w-4 h-4 fill-[#d32323] text-[#d32323]" />
+                                </div>
+                              );
+                            } else if (nextPlatform.isEmail || nextPlatform.name === 'Correo' || nextPlatform.name === 'Email') {
+                              IconComponent = (
+                                <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 shadow-3xs">
+                                  <Mail className="w-4 h-4 text-slate-700" />
                                 </div>
                               );
                             } else {
@@ -1111,7 +1356,7 @@ export default function PipelineSandbox({
                                     : "text-sm font-normal text-yellow-400 hover:text-yellow-300 hover:underline transition-all cursor-pointer flex items-center gap-2 select-none"}
                                 >
                                   {IconComponent}
-                                  <span>Yes, {nextPlatform.name}</span>
+                                  <span>{t('sandbox.yesPlatform', 'Yes, {platform}', { platform: nextPlatform.name })}</span>
                                 </button>
                               </div>
                             );
@@ -1121,7 +1366,7 @@ export default function PipelineSandbox({
                             onClick={() => setHasFinishedSharing(true)}
                             className="w-full py-2 text-xs font-normal text-slate-500 hover:text-slate-400 hover:underline transition-all cursor-pointer text-left"
                           >
-                            No thanks, I'm all done
+                            {t('sandbox.noThanks', "No thanks, I'm all done")}
                           </button>
                         </div>
                       </div>
@@ -1130,8 +1375,18 @@ export default function PipelineSandbox({
                 ) : (
                   <div>
                     {!isCurrentlyPublished && (
-                      <div className="text-xl sm:text-[22px] font-bold text-white mb-3 select-none">
-                        Input Simulator
+                      <div className="flex items-center gap-2 mb-3 select-none">
+                        <div className="text-xl sm:text-[22px] font-bold text-white">
+                          {t('sandbox.inputSimulator', 'Input Simulator')}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleOpenHeaderModal}
+                          className="p-1 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Edit Header & Branding (Logo, Title, Subtitle)"
+                        >
+                          <Settings className="w-5 h-5" />
+                        </button>
                       </div>
                     )}
                     <div className={isCurrentlyPublished ? "space-y-6" : "bg-white rounded-2xl border border-slate-100 p-6 shadow-xs"}>
@@ -1160,7 +1415,7 @@ export default function PipelineSandbox({
                                     <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
                                   </svg>
                                 )}
-                                <span>Connect with Google</span>
+                                <span>{t('sandbox.connectGoogle', 'Connect with Google')}</span>
                               </button>
                             </div>
                           )}
@@ -1397,12 +1652,7 @@ export default function PipelineSandbox({
                 <AlertOctagon className="w-4.5 h-4.5 shrink-0 text-red-600" />
                 <span className="font-semibold">{feedbackError}</span>
               </div>
-              {(feedbackError.toLowerCase().includes('authorization') || 
-                feedbackError.toLowerCase().includes('credential') || 
-                feedbackError.toLowerCase().includes('oauth') || 
-                feedbackError.toLowerCase().includes('unauthorized') || 
-                feedbackError.toLowerCase().includes('token') || 
-                feedbackError.includes('401')) && onLogin && (
+              {isAuthException(feedbackError) && onLogin && (
                 <div className="pt-1.5 pl-6">
                   <button
                     type="button"
@@ -1425,7 +1675,7 @@ export default function PipelineSandbox({
           <div className="lg:col-span-7 flex flex-col">
             {!isCurrentlyPublished && (
               <div className="text-xl sm:text-[22px] font-bold text-white mb-3 select-none">
-                Simulated Mail Dispatch Inbox
+                {t('sandbox.simulatedMailInbox', 'Simulated Mail Dispatch Inbox')}
               </div>
             )}
             {processedRoute ? (
@@ -1450,7 +1700,7 @@ export default function PipelineSandbox({
                         id="connect-google-sandbox-btn"
                       >
                         <span className="flex items-center gap-1.5">
-                          <span className="text-black font-bold">Connect Google</span>
+                          <span className="text-black font-bold">{t('sandbox.connectGoogle', 'Connect Google')}</span>
                           <span
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1492,14 +1742,14 @@ export default function PipelineSandbox({
                         id="append-sheet-btn"
                       >
                         {sheetLoading ? (
-                          <span>Running pipeline...</span>
+                          <span>{t('sandbox.runningPipeline', 'Running pipeline...')}</span>
                         ) : sheetSuccess ? (
                           <span className="text-emerald-700 inline-flex items-center gap-1">
-                            <CheckCircle className="w-3.5 h-3.5" /> Checked in!
+                            <CheckCircle className="w-3.5 h-3.5" /> {t('sandbox.checkedIn', 'Checked in!')}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5">
-                            <span className="text-black font-bold">Record to Sheet</span>
+                            <span className="text-black font-bold">{t('sandbox.recordToSheet', 'Record to Sheet')}</span>
                             <span
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1543,14 +1793,14 @@ export default function PipelineSandbox({
                         id="send-gmail-btn"
                       >
                         {emailLoading ? (
-                          <span>Sending message...</span>
+                          <span>{t('sandbox.sendingMessage', 'Sending message...')}</span>
                         ) : emailSuccess ? (
                           <span className="text-black inline-flex items-center gap-1 font-bold">
-                            <CheckCircle className="w-3.5 h-3.5" /> Email Sent!
+                            <CheckCircle className="w-3.5 h-3.5" /> {t('sandbox.emailSent', 'Email Sent!')}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5">
-                            <span className="text-black font-bold">Send Real Test Email</span>
+                            <span className="text-black font-bold">{t('sandbox.sendRealTestEmail', 'Send Real Test Email')}</span>
                             <span
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1584,11 +1834,11 @@ export default function PipelineSandbox({
                     <span>
                       {user ? (
                         <>
-                          <strong>Google API Session Expired:</strong> Your Google integration session has expired. Click either button above to re-authorize sheets and email delivery!
+                          <strong>{t('sandbox.googleSessionExpired', 'Google API Session Expired:')}</strong> {t('sandbox.googleSessionExpiredDesc', 'Your Google integration session has expired. Click either button above to re-authorize sheets and email delivery!')}
                         </>
                       ) : (
                         <>
-                          <strong>Google Authorization Pending:</strong> Click either option above to sign in with Google and automatically run these real-world integrations!
+                          <strong>{t('sandbox.googleAuthPending', 'Google Authorization Pending:')}</strong> {t('sandbox.googleAuthPendingDesc', 'Click either option above to sign in with Google and automatically run these real-world integrations!')}
                         </>
                       )}
                     </span>
@@ -1623,8 +1873,8 @@ export default function PipelineSandbox({
                 {isCurrentlyPublished && (
                   <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] uppercase font-bold tracking-wider text-slate-500">Automated Pipeline Execution Logs</span>
-                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">Active</span>
+                      <span className="text-[10.5px] uppercase font-bold tracking-wider text-slate-500">{t('sandbox.pipelineLogsTitle', 'Automated Pipeline Execution Logs')}</span>
+                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">{t('sandbox.activeStatus', 'Active')}</span>
                     </div>
                     <div className="font-mono text-[11px] text-slate-700 space-y-1.5 max-h-[140px] overflow-y-auto bg-white border border-slate-200 p-2.5 rounded-xl">
                       {autoSubmitLogs.length > 0 ? (
@@ -1632,7 +1882,7 @@ export default function PipelineSandbox({
                           <div key={idx} className="leading-normal">{log}</div>
                         ))
                       ) : (
-                        <div className="text-slate-500 italic text-xs">Waiting for feedback submission...</div>
+                        <div className="text-slate-500 italic text-xs">{t('sandbox.waitingSubmission', 'Waiting for feedback submission...')}</div>
                       )}
                     </div>
                   </div>
@@ -1643,7 +1893,7 @@ export default function PipelineSandbox({
                 <div className="p-3.5 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-xl flex items-start gap-2 text-[11px] leading-relaxed">
                   <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <span>
-                     <strong>Spreadsheet offline:</strong> Deployed resource records are only unlocked once you deploy the Google Sheet from the first tab! Standard sandbox mail simulation will work immediately.
+                     <strong>{t('sandbox.spreadsheetOffline', 'Spreadsheet offline:')}</strong> {t('sandbox.spreadsheetOfflineDesc', 'Deployed resource records are only unlocked once you deploy the Google Sheet from the first tab! Standard sandbox mail simulation will work immediately.')}
                   </span>
                 </div>
               )}
@@ -1654,12 +1904,12 @@ export default function PipelineSandbox({
                 <Inbox className="w-6 h-6 text-red-400" />
               </div>
               <h4 className="font-semibold text-slate-800 text-sm text-left">
-                {isCurrentlyPublished ? "Feedback Transmission Desk" : "Visual Sandboxed Sandbox"}
+                {isCurrentlyPublished ? t('sandbox.feedbackTransmissionDesk', 'Feedback Transmission Desk') : t('sandbox.visualSandboxedSandbox', 'Visual Sandboxed Sandbox')}
               </h4>
               <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4 text-left">
                 {isCurrentlyPublished 
-                  ? "Configure the customer details on the left, then click 'Submit Feedback' to trigger database recording and live email dispatch routes instantly."
-                  : 'Configure your mock customer details on the left, then click "Simulate" to trace email routing.'}
+                  ? t('sandbox.transmissionDeskDesc', "Configure the customer details on the left, then click 'Submit Feedback' to trigger database recording and live email dispatch routes instantly.")
+                  : t('sandbox.sandboxedSandboxDesc', 'Configure your mock customer details on the left, then click "Simulate" to trace email routing.')}
               </p>
             </div>
           )}
@@ -1677,17 +1927,17 @@ export default function PipelineSandbox({
                 <div className="text-center sm:text-left">
                   <h3 className="text-base font-bold leading-6 text-slate-900 flex items-center gap-2">
                     <Table className="w-5 h-5 text-emerald-600" />
-                    Append Feedback Record?
+                    {t('sandbox.appendSheetTitle', 'Append Feedback Record?')}
                   </h3>
                   <div className="mt-3 text-xs text-slate-500 space-y-2.5 leading-relaxed">
                     <p>
-                      This will write a new live row into the <strong>"Form Responses 1"</strong> sheet of your deployed Google Spreadsheet:
+                      {t('sandbox.appendSheetDesc', 'This will write a new live row into the "Form Responses 1" sheet of your deployed Google Spreadsheet:')}
                     </p>
                     <div className="p-2 border border-slate-100 bg-slate-50 rounded-lg text-[11px] font-mono select-all">
                       ID: {resources.spreadsheetId}
                     </div>
                     <p>
-                      The payload matches your current simulator values:
+                      {t('sandbox.payloadMatches', 'The payload matches your current simulator values:')}
                     </p>
                     <div className="border border-slate-100 rounded-xl overflow-hidden text-[11px]">
                       <div className="grid grid-cols-3 border-b border-slate-100 bg-slate-50 px-3 py-1 font-semibold text-slate-600">
@@ -1711,14 +1961,14 @@ export default function PipelineSandbox({
                   className="inline-flex w-full justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 sm:w-auto cursor-pointer"
                   id="execute-sheet-btn"
                 >
-                  Write to Sheet
+                  {t('sandbox.writeToSheet', 'Write to Sheet')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSheetConfirm(false)}
                   className="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-xs ring-1 ring-inset ring-slate-200 hover:bg-slate-50 sm:mt-0 sm:w-auto cursor-pointer"
                 >
-                  Cancel
+                  {t('sandbox.cancel', 'Cancel')}
                 </button>
               </div>
             </div>
@@ -1736,23 +1986,18 @@ export default function PipelineSandbox({
                 <div>
                   <h3 className="text-base font-bold leading-6 text-slate-900 flex items-center gap-2 mb-3">
                     <Mail className="w-5 h-5 text-red-600" />
-                    Test Gmail Workspace Dispatch
+                    {t('sandbox.testGmailTitle', 'Test Gmail Workspace Dispatch')}
                   </h3>
                   
                   {gmailModalError && (
                     <div className="mb-4 p-3 bg-rose-50 border border-rose-100/80 rounded-xl text-rose-800 text-xs space-y-1.5">
                       <div className="font-bold flex items-center gap-1.5 text-rose-950">
                         <AlertOctagon className="w-4 h-4 shrink-0 text-rose-600" />
-                        <span>Dispatch Error Occurred</span>
+                        <span>{t('sandbox.dispatchErrorOccurred', 'Dispatch Error Occurred')}</span>
                       </div>
                       <p className="leading-relaxed break-words font-mono text-[10.5px] bg-white/50 p-2 rounded-md border border-rose-100/50 max-h-[120px] overflow-y-auto">{gmailModalError}</p>
                       
-                      {(gmailModalError.toLowerCase().includes('authorization') || 
-                        gmailModalError.toLowerCase().includes('credential') || 
-                        gmailModalError.toLowerCase().includes('oauth') || 
-                        gmailModalError.toLowerCase().includes('unauthorized') || 
-                        gmailModalError.toLowerCase().includes('token') || 
-                        gmailModalError.includes('401')) && onLogin && (
+                      {isAuthException(gmailModalError) && onLogin && (
                         <div className="pt-1.5">
                           <button
                             type="button"
@@ -1762,7 +2007,7 @@ export default function PipelineSandbox({
                             id="modal-error-auth-fix-btn"
                           >
                             {isLoggingIn && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                            <span>Connect/Re-authorize Google Account</span>
+                            <span>{t('sandbox.reauthorizeGoogle', 'Connect/Re-authorize Google Account')}</span>
                           </button>
                         </div>
                       )}
@@ -1772,7 +2017,7 @@ export default function PipelineSandbox({
                   <div className="space-y-4">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                        Recipient Address *
+                        {t('sandbox.recipientAddress', 'Recipient Address *')}
                       </label>
                       <input
                         type="email"
@@ -1784,7 +2029,7 @@ export default function PipelineSandbox({
                         id="test-recipient-input"
                       />
                       <span className="text-[10px] text-slate-400 block mt-1">
-                        Specify the test destination. This will send a standard email using your authenticated credentials.
+                        {t('sandbox.recipientHint', 'Specify the test destination. This will send a standard email using your authenticated credentials.')}
                       </span>
                     </div>
 
@@ -1800,11 +2045,11 @@ export default function PipelineSandbox({
                             className="mt-1 shrink-0 rounded-sm accent-amber-600"
                           />
                           <label htmlFor="send-escalation-check" className="text-[11px] text-amber-900 font-semibold leading-normal cursor-pointer select-none">
-                            Escalate poor response alert to Support Team
+                            {t('sandbox.escalateAlertCheck', 'Escalate poor response alert to Support Team')}
                           </label>
                         </div>
                         <p className="text-[10px] text-amber-700 leading-normal pl-5">
-                          If selected, we will also route the critical alert email immediately to your support mailbox: <strong className="font-mono">{routingConfig.supportEmail}</strong>.
+                          {t('sandbox.escalateAlertDesc', 'If selected, we will also route the critical alert email immediately to your support mailbox:')} <strong className="font-mono">{routingConfig.supportEmail}</strong>.
                         </p>
                       </div>
                     )}
@@ -1822,7 +2067,7 @@ export default function PipelineSandbox({
                   {emailLoading && (
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   )}
-                  <span>{emailLoading ? 'Sending Now...' : 'Send Live Email(s)'}</span>
+                  <span>{emailLoading ? t('sandbox.sendingNow', 'Sending Now...') : t('sandbox.sendLiveEmail', 'Send Live Email(s)')}</span>
                 </button>
                 <button
                   type="button"
@@ -1830,7 +2075,7 @@ export default function PipelineSandbox({
                   disabled={emailLoading}
                   className="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-xs ring-1 ring-inset ring-slate-200 hover:bg-slate-50 sm:mt-0 sm:w-auto cursor-pointer disabled:opacity-50"
                 >
-                  Cancel
+                  {t('sandbox.cancel', 'Cancel')}
                 </button>
               </div>
             </div>
@@ -1858,16 +2103,16 @@ export default function PipelineSandbox({
                 <Settings className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Edit Header & Branding</h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Customize header title, subtitle & logo for {client.name}</p>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('sandbox.editHeaderTitle', 'Edit Header & Branding')}</h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('sandbox.customizeHeaderDesc', 'Customize header title, subtitle & logo for {name}', { name: client.name })}</p>
               </div>
             </div>
 
-            <div className="space-y-4 mb-6">
+            <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto pr-1">
               {/* Header Title */}
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Header Title
+                  {t('sandbox.headerTitleLabel', 'Header Title')}
                 </label>
                 <input
                   type="text"
@@ -1881,7 +2126,7 @@ export default function PipelineSandbox({
               {/* Header Subtitle */}
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Header Subtitle
+                  {t('sandbox.headerSubtitleLabel', 'Header Subtitle')}
                 </label>
                 <input
                   type="text"
@@ -1892,10 +2137,169 @@ export default function PipelineSandbox({
                 />
               </div>
 
+              {/* Title Font Style & Point Size Chooser */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    {t('sandbox.fontFamilyLabel', 'Title Font Style')}
+                  </label>
+                  <select
+                    value={titleFontInput}
+                    onChange={(e) => setTitleFontInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium cursor-pointer"
+                  >
+                    <option value="sans">{t('sandbox.fontSans', 'Sans-serif (Modern Clean)')}</option>
+                    <option value="helvetica">{t('sandbox.fontHelvetica', 'Helvetica Extra Bold')}</option>
+                    <option value="serif">{t('sandbox.fontSerif', 'Serif (Classic & Elegant)')}</option>
+                    <option value="playfair">{t('sandbox.fontPlayfair', 'Playfair Display (Luxury Serif)')}</option>
+                    <option value="georgia">{t('sandbox.fontGeorgia', 'Georgia (Editorial Serif)')}</option>
+                    <option value="mono">{t('sandbox.fontMono', 'Monospace (Code & Tech)')}</option>
+                    <option value="impact">{t('sandbox.fontImpact', 'Impact (Bold Display)')}</option>
+                    <option value="cursive">{t('sandbox.fontCursive', 'Cursive (Casual & Friendly)')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    {t('sandbox.fontSizeLabel', 'Title Point Size')}
+                  </label>
+                  <select
+                    value={titleFontSizeInput}
+                    onChange={(e) => setTitleFontSizeInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium cursor-pointer"
+                  >
+                    <option value="12pt">12 pt</option>
+                    <option value="14pt">14 pt</option>
+                    <option value="16pt">16 pt</option>
+                    <option value="18pt">18 pt</option>
+                    <option value="20pt">20 pt</option>
+                    <option value="22pt">22 pt</option>
+                    <option value="24pt">24 pt</option>
+                    <option value="28pt">28 pt</option>
+                    <option value="32pt">32 pt</option>
+                    <option value="36pt">36 pt</option>
+                    <option value="48pt">48 pt</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Colors Grid (Title & Subtitle Colors) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Title Color */}
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    {t('sandbox.titleColorLabel', 'Title Color')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={titleColorInput}
+                      onChange={(e) => setTitleColorInput(e.target.value)}
+                      className="w-9 h-9 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer p-0.5 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={titleColorInput}
+                      onChange={(e) => setTitleColorInput(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-mono uppercase bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                  {/* Color Swatches */}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {['#dc2626', '#d97706', '#1e3a8a', '#059669', '#7c3aed', '#18181b'].map((hex) => (
+                      <button
+                        key={`t-${hex}`}
+                        type="button"
+                        onClick={() => setTitleColorInput(hex)}
+                        className={`w-5 h-5 rounded-full border border-black/20 transition-transform ${
+                          titleColorInput.toLowerCase() === hex ? 'ring-2 ring-red-500 scale-110' : 'hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: hex }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subtitle Color */}
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    {t('sandbox.subtitleColorLabel', 'Subtitle Color')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={subtitleColorInput}
+                      onChange={(e) => setSubtitleColorInput(e.target.value)}
+                      className="w-9 h-9 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer p-0.5 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={subtitleColorInput}
+                      onChange={(e) => setSubtitleColorInput(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-mono uppercase bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                  {/* Color Swatches */}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {['#dc2626', '#d97706', '#1e3a8a', '#059669', '#7c3aed', '#18181b'].map((hex) => (
+                      <button
+                        key={`s-${hex}`}
+                        type="button"
+                        onClick={() => setSubtitleColorInput(hex)}
+                        className={`w-5 h-5 rounded-full border border-black/20 transition-transform ${
+                          subtitleColorInput.toLowerCase() === hex ? 'ring-2 ring-red-500 scale-110' : 'hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: hex }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Portal Address (URL) */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+                  {t('sandbox.portalAddressLabel', 'Custom Feedback Portal Address (URL)')}
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 flex items-center">
+                    <Globe className="w-4 h-4 text-zinc-400 absolute left-3 pointer-events-none" />
+                    <input
+                      type="url"
+                      value={customAppUrlInput}
+                      onChange={(e) => setCustomAppUrlInput(e.target.value)}
+                      placeholder={getLivePortalUrl()}
+                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyPortalUrl}
+                    title={t('common.copy', 'Copiar enlace')}
+                    className="px-3.5 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border border-red-500 shadow-sm"
+                  >
+                    {copiedPortalUrl ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-300" />
+                        <span className="text-emerald-200 font-bold">{t('common.copied', '¡Copiado!')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>{t('common.copy', 'Copiar')}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                  {t('sandbox.portalAddressHelp', 'URL pública en vivo para este portal de opiniones. Usa el botón de copiar para compartirla fácilmente con tus clientes.')}
+                </p>
+              </div>
+
               {/* Image URL Field */}
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Brand Logo Image URL (PNG, JPG, SVG, WebP)
+                  {t('sandbox.logoUrlLabel', 'Brand Logo Image URL (PNG, JPG, SVG, WebP)')}
                 </label>
                 <div className="relative flex items-center">
                   <LinkIcon className="w-4 h-4 text-zinc-400 absolute left-3 pointer-events-none" />
@@ -1915,32 +2319,53 @@ export default function PipelineSandbox({
               {/* Live Preview Box */}
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Logo Live Preview
+                  {t('sandbox.headerPreviewLabel', 'Header Live Preview')}
                 </label>
-                <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 h-24 flex items-center justify-center p-3 relative overflow-hidden">
-                  {logoUrlInput.trim() ? (
-                    !logoImageError ? (
-                      <img
-                        src={logoUrlInput.trim()}
-                        alt="Logo preview"
-                        className="max-h-full max-w-full object-contain"
-                        referrerPolicy="no-referrer"
-                        onError={() => setLogoImageError(true)}
-                      />
-                    ) : (
-                      <div className="text-center p-2">
-                        <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">⚠️ Failed to load image from URL</p>
-                        <p className="text-[11px] text-zinc-500 mt-0.5">Check if the link is direct & publicly accessible</p>
-                      </div>
-                    )
-                  ) : (
-                    <div className="text-center p-2 text-zinc-400">
-                      <p className="text-xs font-medium">No URL entered — Fallback initials will be displayed</p>
-                      <div className="mt-1.5 inline-flex items-center justify-center h-9 w-9 bg-red-650 text-white font-black text-xs rounded-lg">
-                        {client.name.substring(0, 2).toUpperCase()}
-                      </div>
+                <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 relative overflow-hidden shadow-xs">
+                  <div className="flex items-center gap-3">
+                    {/* Logo Preview */}
+                    <div className="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center p-1 overflow-hidden shrink-0">
+                      {logoUrlInput.trim() && !logoImageError ? (
+                        <img
+                          src={logoUrlInput.trim()}
+                          alt="Logo preview"
+                          className="max-h-full max-w-full object-contain"
+                          referrerPolicy="no-referrer"
+                          onError={() => setLogoImageError(true)}
+                        />
+                      ) : (
+                        <span className="font-black text-xs text-red-650">
+                          {client.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      )}
                     </div>
-                  )}
+
+                    {/* Text Preview */}
+                    <div className="flex-1 min-w-0">
+                      <h4
+                        style={{
+                          ...getFontFamilyStyle(titleFontInput),
+                          color: titleColorInput,
+                          fontSize: titleFontSizeInput || '18pt'
+                        }}
+                        className="font-bold leading-tight truncate"
+                      >
+                        {modalTitleInput.trim() || currentTitle}
+                      </h4>
+                      <p
+                        style={{ color: subtitleColorInput }}
+                        className="text-xs font-semibold mt-0.5 truncate"
+                      >
+                        {modalSubtitleInput.trim() || currentSubtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Portal Address Badge Preview */}
+                  <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-900 flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono">
+                    <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                    <span className="truncate">{customAppUrlInput.trim() || getLivePortalUrl(client)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -1956,7 +2381,7 @@ export default function PipelineSandbox({
                     className="px-2.5 py-1 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                   >
                     <RotateCcw className="w-3 h-3" />
-                    M&K Default Logo
+                    {t('sandbox.mkDefaultLogo', 'M&K Default Logo')}
                   </button>
                 )}
                 <button
@@ -1964,10 +2389,13 @@ export default function PipelineSandbox({
                   onClick={() => {
                     setModalTitleInput('Customer Feedback');
                     setModalSubtitleInput('We value your experience!');
+                    setTitleFontInput('sans');
+                    setTitleColorInput('#dc2626');
+                    setSubtitleColorInput('#dc2626');
                   }}
                   className="px-2.5 py-1 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors cursor-pointer"
                 >
-                  Reset Defaults
+                  {t('sandbox.resetDefaults', 'Reset Defaults')}
                 </button>
                 <button
                   type="button"
@@ -1977,7 +2405,7 @@ export default function PipelineSandbox({
                   }}
                   className="px-2.5 py-1 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors cursor-pointer"
                 >
-                  Clear Logo
+                  {t('sandbox.clearLogo', 'Clear Logo')}
                 </button>
               </div>
             </div>
@@ -1992,7 +2420,7 @@ export default function PipelineSandbox({
                 }}
                 className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
               >
-                Cancel
+                {t('sandbox.cancel', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -2003,7 +2431,7 @@ export default function PipelineSandbox({
                 className="px-5 py-2 text-xs font-bold bg-[#dc2626] hover:bg-red-700 text-white rounded-xl shadow-xs transition-all duration-150 cursor-pointer flex items-center gap-1.5 active:scale-95"
               >
                 <Check className="w-4 h-4" />
-                Save Changes
+                {t('sandbox.saveChanges', 'Save Changes')}
               </button>
             </div>
           </div>

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User } from 'firebase/auth';
 import { initAuth, googleSignIn, logout } from './services/firebaseAuth';
 import { WorkspaceResources, RoutingConfiguration, Client, ReviewRecord } from './types';
 import { useLanguage } from './i18n/LanguageContext';
+import LanguageSelector from './components/LanguageSelector';
 import LogicParametersTab from './components/LogicParametersTab';
 import SheetAndScriptTab from './components/SheetAndScriptTab';
 import PipelineSandbox from './components/PipelineSandbox';
-import QRCodeTab from './components/QRCodeTab';
-import SocialShareTab from './components/SocialShareTab';
 import ReviewsDashboard from './components/ReviewsDashboard';
 import GmbConnectionVerifier from './components/GmbConnectionVerifier';
-import mkLogo from './assets/images/mk_logo_1781902335896.jpg';
+import mkLogo from './assets/images/mk_logo_new.png';
+import wartsLogo from './assets/images/warts_80s_logo_1786769647096.jpg';
 import {
   Sparkles,
   Sheet,
@@ -89,7 +89,8 @@ const defaultRoutingConfig = (userEmail: string = ''): RoutingConfiguration => (
   <p style="font-size: 17px; line-height: 25px; margin-top: 0; margin-bottom: 16px;">Can you please reply to this email, or let us know a convenient time to schedule a phone call? We would appreciate the opportunity to listen to your concerns and seek a resolution.</p>
   <p style="font-size: 17px; line-height: 25px; color: #000000; margin-top: 25px; margin-bottom: 0;">\${signature}</p>
 </div>`,
-  companyLogoUrl: '',
+  companyLogoUrl: 'https://lh3.googleusercontent.com/d/19E4sOfw2iI6VXsijt6jHKZ0cZzdZ4pB2',
+  privateFeedbackUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_LogQ1N6I7x2FQyva007AOdoa-BPcYc886Gxz207WWBccyA/viewform',
   starThreshold: 3,
   yelpEnabled: true,
   yelpUrl: 'https://www.yelp.com/biz/m-and-k-used-auto-parts-vero-beach-2',
@@ -102,13 +103,15 @@ const defaultRoutingConfig = (userEmail: string = ''): RoutingConfiguration => (
 const isPublished = () => {
   try {
     const hostname = window.location.hostname;
-    return hostname.includes('-pre-') || (!hostname.includes('-dev-') && hostname !== 'localhost' && hostname !== '127.0.0.1');
+    const search = window.location.search;
+    return hostname.includes('-pre-') || search.includes('mode=live') || (!hostname.includes('-dev-') && hostname !== 'localhost' && hostname !== '127.0.0.1');
   } catch {
     return false;
   }
 };
 
 export default function App() {
+  const { syncClientLanguage } = useLanguage();
   const { t } = useLanguage();
   const [forceLivePreview, setForceLivePreview] = useState(() => {
     try {
@@ -123,12 +126,14 @@ export default function App() {
     return isPublished();
   };
 
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'logic' | 'dashboard' | 'script' | 'sandbox' | 'qr' | 'social' | 'gmb-verify'>(() => {
+  const [activeTab, setActiveTab] = useState<'blueprint' | 'logic' | 'dashboard' | 'script' | 'sandbox' | 'gmb-verify'>(() => {
     try {
       if (getPublishedState()) {
         return 'sandbox';
       }
-      return (localStorage.getItem('g_active_tab') as any) || 'blueprint';
+      const saved = localStorage.getItem('g_active_tab');
+      if (saved === 'qr' || saved === 'social') return 'blueprint';
+      return (saved as any) || 'blueprint';
     } catch {
       return 'blueprint';
     }
@@ -150,8 +155,152 @@ export default function App() {
         formUrl: null
       };
 
+      const defaultWArtsResources = {
+        spreadsheetId: '11gJNsJ4sRLnEMnve_4dnmjuudinUjTsL2cO5zons_oY',
+        spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/11gJNsJ4sRLnEMnve_4dnmjuudinUjTsL2cO5zons_oY/edit?usp=sharing',
+        formId: null,
+        formUrl: null
+      };
+
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const baseUrl = origin.includes('-dev-') ? origin.replace('-dev-', '-pre-') : origin;
+      const mandkLiveUrl = `${baseUrl}?mode=live&client=mandk`;
+      const wArtsLiveUrl = `${baseUrl}?mode=live&client=w-arts`;
+
+      const defaultWArtsClient: Client = {
+        id: 'w-arts',
+        name: 'W-Arts',
+        language: 'es',
+        appUrl: wArtsLiveUrl,
+        logoUrl: '',
+        titleColor: '#dc2626',
+        subtitleColor: '#dc2626',
+        portalTitle: 'W-Arts',
+        portalSubtitle: '¿Qué le pareció nuestro espectáculo?',
+        titleFont: 'helvetica',
+        titleFontSize: '32pt',
+        resources: defaultWArtsResources,
+        routingConfig: {
+          ...defaultRoutingConfig(),
+          googleReviewsUrl: 'https://g.page/r/CWU_opvS6RMREAI/review',
+          yelpEnabled: false,
+          yelpUrl: '',
+          facebookEnabled: true,
+          facebookUrl: 'https://www.facebook.com/WArtsproducciones/reviews',
+          companyLogoUrl: '',
+          privateFeedbackUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScp9SPrWmwS5uIMnoqA6COnlJtCz4ss7z2okS0WkOaM96mBMQ/viewform?usp=header',
+          excellentSubject: '¡Valoramos sinceramente su opinión!',
+          excellentBody: 'Hola {NAME},\n\nMuchas gracias por tomarte el tiempo de compartir tu experiencia. ¡Estamos absolutamente encantados de recibir tu calificación de {RATING} Estrellas! Tus comentarios motivan a nuestro equipo:\n\n"{COMMENTS}"\n\nUn saludo cálido,\nEl equipo de W-Arts',
+          goodSubject: '¡Muchas gracias por sus comentarios!',
+          goodBody: 'Hola {NAME},\n\nGracias por enviarnos tus comentarios ({RATING} Estrellas). Apreciamos sinceramente tu opinión:\n\n"{COMMENTS}"\n\nAtentamente,\nEl equipo de W-Arts',
+          neutralSubject: 'Lamentamos su experiencia - Nos gustaría ayudar',
+          neutralBody: 'Estimado/a {NAME},\n\nLamentamos profundamente saber que tu experiencia reciente fue de {RATING} Estrellas:\n\n"{COMMENTS}"\n\nPor favor contáctanos directamente para corregir la situación.\n\nAtentamente,\nEquipo de Calidad de W-Arts',
+          poorSubject: 'Lamentamos su experiencia - Nos gustaría ayudar',
+          poorBody: 'Estimado/a {NAME},\n\nLamentamos profundamente saber que tu experiencia reciente fue de {RATING} Estrellas:\n\n"{COMMENTS}"\n\nPor favor contáctanos directamente para corregir la situación.\n\nAtentamente,\nEquipo de Calidad de W-Arts'
+        }
+      };
+
+      const defaultMandKClient: Client = {
+        id: 'mandk',
+        name: 'MandK App',
+        language: 'en',
+        portalTitle: 'Customer Feedback',
+        portalSubtitle: 'We value your experience!',
+        appUrl: mandkLiveUrl,
+        logoUrl: 'https://lh3.googleusercontent.com/d/19E4sOfw2iI6VXsijt6jHKZ0cZzdZ4pB2',
+        resources: defaultResources,
+        routingConfig: {
+          ...defaultRoutingConfig(),
+          googleReviewsUrl: 'https://g.page/r/CajrrF4R_V20EAI/review',
+          facebookUrl: 'https://www.facebook.com/MKusedautoparts/reviews',
+          privateFeedbackUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_LogQ1N6I7x2FQyva007AOdoa-BPcYc886Gxz207WWBccyA/viewform',
+          companyLogoUrl: 'https://lh3.googleusercontent.com/d/19E4sOfw2iI6VXsijt6jHKZ0cZzdZ4pB2'
+        }
+      };
+
       if (savedClients) {
         loadedClients = JSON.parse(savedClients);
+        // Filter out "Client 2" or "client_2" as requested
+        loadedClients = loadedClients.filter(c => c.name.trim().toLowerCase() !== 'client 2' && c.id !== 'client_2');
+        loadedClients = loadedClients.map(c => {
+          let updated = { ...c };
+          if (c.id === 'mandk' || (c.name.toLowerCase().includes('mandk') && c.id !== 'w-arts')) {
+            let pTitle = updated.portalTitle;
+            if (!pTitle || pTitle === 'W-Arts' || pTitle === 'Tus Comentarios' || pTitle.toLowerCase().includes('espectáculo') || pTitle.toLowerCase().includes('w-arts')) {
+              pTitle = 'Customer Feedback';
+            }
+            let pSub = updated.portalSubtitle;
+            if (!pSub || pSub.toLowerCase().includes('espectáculo') || pSub.toLowerCase().includes('nos son muy importantes')) {
+              pSub = 'We value your experience!';
+            }
+            updated = {
+              ...updated,
+              id: 'mandk',
+              name: 'MandK App',
+              language: 'en',
+              portalTitle: pTitle,
+              portalSubtitle: pSub,
+              appUrl: mandkLiveUrl,
+              logoUrl: (!updated.logoUrl || updated.logoUrl.includes('mk_logo_1781902335896')) ? 'https://lh3.googleusercontent.com/d/19E4sOfw2iI6VXsijt6jHKZ0cZzdZ4pB2' : updated.logoUrl,
+              routingConfig: {
+                ...defaultRoutingConfig(),
+                ...updated.routingConfig,
+                googleReviewsUrl: (!updated.routingConfig?.googleReviewsUrl || updated.routingConfig.googleReviewsUrl.includes('WszeTv9CV8XWJPor7'))
+                  ? 'https://g.page/r/CajrrF4R_V20EAI/review'
+                  : updated.routingConfig.googleReviewsUrl,
+                facebookUrl: (!updated.routingConfig?.facebookUrl || updated.routingConfig.facebookUrl.includes('WArtsproducciones'))
+                  ? 'https://www.facebook.com/MKusedautoparts/reviews'
+                  : updated.routingConfig.facebookUrl,
+                privateFeedbackUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_LogQ1N6I7x2FQyva007AOdoa-BPcYc886Gxz207WWBccyA/viewform',
+                companyLogoUrl: 'https://lh3.googleusercontent.com/d/19E4sOfw2iI6VXsijt6jHKZ0cZzdZ4pB2'
+              }
+            };
+          } else if (c.id === 'w-arts' || c.name.toLowerCase().includes('w-arts') || c.id === 'client_1786751504755') {
+            updated = {
+              ...updated,
+              id: 'w-arts',
+              name: 'W-Arts',
+              language: 'es',
+              logoUrl: '',
+              titleColor: '#dc2626',
+              subtitleColor: '#dc2626',
+              portalTitle: updated.portalTitle && updated.portalTitle !== 'Tus Comentarios' ? updated.portalTitle : 'W-Arts',
+              portalSubtitle: updated.portalSubtitle && updated.portalSubtitle !== 'nos son muy importantes' ? updated.portalSubtitle : '¿Qué le pareció nuestro espectáculo?',
+              titleFontSize: '32pt',
+              appUrl: wArtsLiveUrl,
+              resources: {
+                ...defaultWArtsResources,
+                ...updated.resources,
+                spreadsheetId: (!updated.resources?.spreadsheetId || updated.resources.spreadsheetId === '1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4')
+                  ? '11gJNsJ4sRLnEMnve_4dnmjuudinUjTsL2cO5zons_oY'
+                  : updated.resources.spreadsheetId,
+                spreadsheetUrl: (!updated.resources?.spreadsheetUrl || updated.resources.spreadsheetUrl.includes('1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4'))
+                  ? 'https://docs.google.com/spreadsheets/d/11gJNsJ4sRLnEMnve_4dnmjuudinUjTsL2cO5zons_oY/edit?usp=sharing'
+                  : updated.resources.spreadsheetUrl,
+              },
+              routingConfig: {
+                ...updated.routingConfig,
+                companyLogoUrl: '',
+                yelpEnabled: false,
+                yelpUrl: '',
+                facebookEnabled: true,
+                facebookUrl: 'https://www.facebook.com/WArtsproducciones/reviews',
+                googleReviewsUrl: (!updated.routingConfig?.googleReviewsUrl || updated.routingConfig.googleReviewsUrl.includes('CajrrF4R') || updated.routingConfig.googleReviewsUrl.includes('WszeTv9CV8XWJPor7'))
+                  ? 'https://g.page/r/CWU_opvS6RMREAI/review'
+                  : updated.routingConfig.googleReviewsUrl,
+                privateFeedbackUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScp9SPrWmwS5uIMnoqA6COnlJtCz4ss7z2okS0WkOaM96mBMQ/viewform'
+              }
+            };
+          }
+          return updated;
+        });
+
+        if (!loadedClients.some(c => c.id === 'mandk')) {
+          loadedClients.unshift(defaultMandKClient);
+        }
+        if (!loadedClients.some(c => c.id === 'w-arts' || c.id === 'client_1786751504755')) {
+          loadedClients.push(defaultWArtsClient);
+        }
       } else {
         const savedResources = localStorage.getItem('g_resources');
         const savedRoutingConfig = localStorage.getItem('g_routing_config');
@@ -180,22 +329,31 @@ export default function App() {
           } catch {}
         }
 
-        loadedClients = [{
-          id: 'mandk',
-          name: 'MandK App',
-          appUrl: 'https://mandk-app.ai.studio',
-          resources: initialResources,
-          routingConfig: initialRoutingConfig
-        }];
+        loadedClients = [
+          defaultMandKClient,
+          defaultWArtsClient
+        ];
       }
 
-      // Automatically inject custom client from URL parameters if not exists (for clean environment testing / mobile scanning)
+      // Ensure W-Arts workspace always exists in workspace list
+      const hasWArts = loadedClients.some(c => c.id === 'w-arts' || c.name.toLowerCase().includes('w-arts'));
+      if (!hasWArts) {
+        loadedClients.push(defaultWArtsClient);
+      }
+
+      // Automatically inject custom client from URL parameters if not exists
       const urlParams = new URLSearchParams(window.location.search);
-      const urlClientId = urlParams.get('client') || urlParams.get('clientId');
+      let urlClientId = urlParams.get('client') || urlParams.get('clientId');
+      if (urlClientId) {
+        const norm = urlClientId.trim().toLowerCase();
+        if (norm.includes('w-arts') || norm.includes('warts') || norm === 'client_1786751504755') {
+          urlClientId = 'w-arts';
+        }
+      }
+
       if (urlClientId && urlClientId !== 'mandk') {
-        const exists = loadedClients.some(c => c.id === urlClientId);
+        const exists = loadedClients.some(c => c.id === urlClientId || c.id.toLowerCase() === urlClientId.toLowerCase());
         if (!exists) {
-          // Format a nice display name
           let clientName = 'Custom Client';
           if (urlClientId.startsWith('client_')) {
             clientName = `Client ${loadedClients.length + 1}`;
@@ -475,11 +633,36 @@ export default function App() {
 
   const [activeClientId, setActiveClientId] = useState<string>(() => {
     try {
+      const pathname = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+      if (pathname.includes('w-arts') || pathname.includes('warts')) {
+        return 'w-arts';
+      }
+      if (pathname.includes('mandk')) {
+        return 'mandk';
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       const urlClientId = urlParams.get('client') || urlParams.get('clientId');
       if (urlClientId) {
+        const norm = urlClientId.trim().toLowerCase();
+        if (norm.includes('w-arts') || norm.includes('warts') || norm === 'client_1786751504755') {
+          return 'w-arts';
+        }
+        if (norm.includes('mandk') || norm.includes('m&k') || norm.includes('mk')) {
+          return 'mandk';
+        }
         return urlClientId;
       }
+
+      const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+      if (hostname.includes('mandk-app') || hostname.includes('mandk')) {
+        return 'mandk';
+      }
+
+      if (isPublished()) {
+        return 'mandk';
+      }
+
       return localStorage.getItem('g_active_client_id') || 'mandk';
     } catch {
       return 'mandk';
@@ -489,17 +672,50 @@ export default function App() {
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState('');
 
-  const activeClient = clients.find(c => c.id === activeClientId) || clients[0] || {
-    id: 'mandk',
-    name: 'MandK App',
-    resources: {
-      spreadsheetId: '1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4',
-      spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4/edit?usp=sharing',
-      formId: null,
-      formUrl: null
-    },
-    routingConfig: defaultRoutingConfig()
-  };
+  const activeClient = useMemo(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlClientId = urlParams ? (urlParams.get('client') || urlParams.get('clientId')) : null;
+    const urlNorm = urlClientId ? urlClientId.trim().toLowerCase() : '';
+    const pathname = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+    const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+
+    // 1. If explicit w-arts is passed in URL path or query string, strictly select W-Arts
+    if (pathname.includes('w-arts') || pathname.includes('warts') || urlNorm.includes('w-arts') || urlNorm.includes('warts') || urlNorm === 'client_1786751504755') {
+      const wArts = clients.find(c => c.id === 'w-arts' || c.id === 'client_1786751504755' || c.name.toLowerCase().includes('w-arts'));
+      if (wArts) return wArts;
+    }
+
+    // 2. If explicit mandk is passed in URL path or query string
+    if (pathname.includes('mandk') || urlNorm.includes('mandk')) {
+      const mAndK = clients.find(c => c.id === 'mandk' || c.name.toLowerCase().includes('mandk') || c.name.toLowerCase().includes('m&k'));
+      if (mAndK) return mAndK;
+    }
+
+    // 3. Match by activeClientId state
+    const norm = (activeClientId || '').trim().toLowerCase();
+    if (norm.includes('w-arts') || norm.includes('warts') || norm === 'client_1786751504755') {
+      const wArts = clients.find(c => c.id === 'w-arts' || c.id === 'client_1786751504755' || c.name.toLowerCase().includes('w-arts'));
+      if (wArts) return wArts;
+    }
+
+    const defaultMandK = clients.find(c => c.id === 'mandk' || c.name.toLowerCase().includes('mandk') || c.name.toLowerCase().includes('m&k'));
+    if (defaultMandK) return defaultMandK;
+
+    return clients.find(c => c.id === 'mandk') || clients[0] || {
+      id: 'mandk',
+      name: 'MandK App',
+      language: 'en',
+      portalTitle: 'Customer Feedback',
+      portalSubtitle: 'We value your experience!',
+      resources: {
+        spreadsheetId: '1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4',
+        spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4/edit?usp=sharing',
+        formId: null,
+        formUrl: null
+      },
+      routingConfig: defaultRoutingConfig()
+    };
+  }, [clients, activeClientId]);
 
   const resources = activeClient.resources;
   const routingConfig = activeClient.routingConfig;
@@ -536,7 +752,16 @@ export default function App() {
     } : c));
   };
 
-  const handleUpdateHeader = (updates: { portalTitle?: string; portalSubtitle?: string; logoUrl?: string }) => {
+  const handleUpdateHeader = (updates: {
+    portalTitle?: string;
+    portalSubtitle?: string;
+    logoUrl?: string;
+    titleFont?: string;
+    titleFontSize?: string;
+    titleColor?: string;
+    subtitleColor?: string;
+    appUrl?: string;
+  }) => {
     setClients(prev => prev.map(c => c.id === activeClientId ? {
       ...c,
       ...updates,
@@ -552,8 +777,8 @@ export default function App() {
       id: newId,
       name: newClientName,
       resources: {
-        spreadsheetId: null,
-        spreadsheetUrl: null,
+        spreadsheetId: '1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4',
+        spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/1NFtZc8tbp3DCOT4JKze7b7np3iB8kjgBRsvXc4X5lQ4/edit?usp=sharing',
         formId: null,
         formUrl: null
       },
@@ -574,7 +799,18 @@ export default function App() {
 
   const saveEditing = () => {
     if (editingNameValue.trim()) {
-      setClients(prev => prev.map(c => c.id === editingClientId ? { ...c, name: editingNameValue.trim() } : c));
+      const trimmed = editingNameValue.trim();
+      setClients(prev => prev.map(c => {
+        if (c.id === editingClientId) {
+          const isWarts = trimmed.toLowerCase().includes('w-arts') || c.id.toLowerCase().includes('w-arts');
+          return {
+            ...c,
+            name: trimmed,
+            ...(isWarts && !c.appUrl ? { appUrl: 'https://ais-pre-ohv7dvr7idu5v2p5yo5ryr-78050717455.us-east5.run.app/?mode=live&client=w-arts' } : {})
+          };
+        }
+        return c;
+      }));
     }
     setEditingClientId(null);
   };
@@ -623,10 +859,11 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem('g_active_client_id', activeClientId);
+      syncClientLanguage(activeClientId);
     } catch (e) {
       console.warn(e);
     }
-  }, [activeClientId]);
+  }, [activeClientId, syncClientLanguage]);
 
   useEffect(() => {
     try {
@@ -732,7 +969,31 @@ export default function App() {
                   {clients.map((client) => {
                     const isActive = client.id === activeClientId;
                     const isEditing = client.id === editingClientId;
-                    const clientAppUrl = client.appUrl || 'https://mandk-app.ai.studio';
+                    const getLiveUrl = () => {
+                      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                      const baseUrl = origin.includes('-dev-') ? origin.replace('-dev-', '-pre-') : origin;
+
+                      if (client.id === 'mandk' || client.name.toLowerCase().includes('mandk')) {
+                        if (client.appUrl && client.appUrl.trim() !== '' && !client.appUrl.includes('w-arts') && !client.appUrl.includes('mandk-app') && !client.appUrl.includes('.ai.studio')) {
+                          return client.appUrl.trim();
+                        }
+                        return `${baseUrl}?mode=live&client=mandk`;
+                      }
+
+                      if (client.id === 'w-arts' || client.name.toLowerCase().includes('w-arts')) {
+                        if (client.appUrl && client.appUrl.trim() !== '' && !client.appUrl.includes('mandk') && !client.appUrl.includes('.ai.studio')) {
+                          return client.appUrl.trim();
+                        }
+                        return `${baseUrl}?mode=live&client=w-arts`;
+                      }
+
+                      if (client.appUrl && client.appUrl.trim() !== '' && !client.appUrl.includes('mandk-app') && !client.appUrl.includes('.ai.studio')) {
+                        return client.appUrl.trim();
+                      }
+
+                      return `${baseUrl}?mode=live&client=${encodeURIComponent(client.id)}`;
+                    };
+                    const clientAppUrl = getLiveUrl();
                     return (
                       <div
                         key={client.id}
@@ -745,9 +1006,9 @@ export default function App() {
                             }
                           }
                         }}
-                        className={`group relative flex items-center gap-2.5 px-3 py-1 rounded-full font-bold transition-all duration-150 select-none ${
+                        className={`group relative flex items-center gap-2.5 px-1 py-1 font-bold transition-all duration-150 select-none ${
                           isActive
-                            ? 'text-zinc-100 text-xl sm:text-2xl font-extrabold bg-zinc-800/40 hover:bg-zinc-800/70 cursor-pointer'
+                            ? 'text-zinc-100 text-xl sm:text-2xl font-extrabold cursor-pointer'
                             : 'text-zinc-400 hover:text-zinc-200 text-lg cursor-pointer'
                         }`}
                         title={isActive ? `Click to open ${clientAppUrl} in a new tab` : `Switch to ${client.name}`}
@@ -813,6 +1074,11 @@ export default function App() {
                   >
                     <Plus className="w-5 h-5" />
                   </button>
+
+                  <div className="h-5 w-[1px] bg-zinc-700/60 mx-1 sm:mx-2 shrink-0 hidden sm:block" />
+
+                  {/* Language Selector (EN / ES) */}
+                  <LanguageSelector variant="dark" size="sm" className="shrink-0" />
                 </div>
               </div>
 
@@ -885,7 +1151,7 @@ export default function App() {
                   }`}
                   id="tab-blueprint"
                 >
-                  <span>Google Sheet</span>
+                  <span>{t('tab.blueprint', 'Google Sheet')}</span>
                 </button>
 
                 <button
@@ -901,39 +1167,7 @@ export default function App() {
                   }`}
                   id="tab-logic-parameters"
                 >
-                  <span>Logic Parameters</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setForceLivePreview(false);
-                    try { localStorage.setItem('g_force_live_preview', 'false'); } catch {}
-                    setActiveTab('qr');
-                  }}
-                  className={`px-3.5 py-1.5 text-xs font-medium rounded-full flex items-center gap-2 transition-all duration-150 select-none cursor-pointer shrink-0 ${
-                    activeTab === 'qr'
-                      ? 'text-white font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
-                  }`}
-                  id="tab-qr"
-                >
-                  <span>{t('tab.qr', 'QR Code')}</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setForceLivePreview(false);
-                    try { localStorage.setItem('g_force_live_preview', 'false'); } catch {}
-                    setActiveTab('social');
-                  }}
-                  className={`px-3.5 py-1.5 text-xs font-medium rounded-full flex items-center gap-2 transition-all duration-150 select-none cursor-pointer shrink-0 ${
-                    activeTab === 'social'
-                      ? 'text-white font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
-                  }`}
-                  id="tab-social"
-                >
-                  <span>{t('tab.social', 'Social Share')}</span>
+                  <span>{t('header.routingRules', 'Logic Parameters')}</span>
                 </button>
               </div>
             </div>
@@ -1003,20 +1237,6 @@ export default function App() {
               activeClient={activeClient}
               onUpdateLogo={handleUpdateLogo}
               onUpdateHeader={handleUpdateHeader}
-            />
-          )}
-
-          {activeTab === 'qr' && (
-            <QRCodeTab
-              activeClientName={activeClient.name}
-              activeClientId={activeClient.id}
-            />
-          )}
-
-          {activeTab === 'social' && (
-            <SocialShareTab
-              activeClientName={activeClient.name}
-              activeClientId={activeClient.id}
             />
           )}
 

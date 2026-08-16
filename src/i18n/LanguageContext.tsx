@@ -3,70 +3,134 @@ import { Language, translations } from './translations';
 
 export interface LanguageContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (lang: Language, clientId?: string) => void;
+  syncClientLanguage: (clientId: string) => void;
   t: (
     key: string,
     defaultTextOrParams?: string | Record<string, string | number>,
     maybeParams?: Record<string, string | number>
   ) => string;
   isSpanish: boolean;
-  getRatingSuggestions: (rating: number) => string[];
+  getRatingSuggestions: (rating: number, clientId?: string) => string[];
 }
 
-const RATING_SUGGESTIONS_EN: Record<number, string[]> = {
+const MANDK_SUGGESTIONS_EN: Record<number, string[]> = {
   5: [
-    "🛠️ M&K Auto Parts saved me lots of money by sourcing a premium used transmission from their yard and installing it for a fraction of what the dealership quoted.",
-    "⚡ They fixed my car for literally half the price my regular mechanic quoted because they have all the parts right on-site.",
-    "🔍 Their ASE-certified mechanics quickly diagnosed an electrical issue that two other local shops completely missed.",
-    "🌍 They tracked down a rare engine component for me in less than 24 hours using their incredible nationwide parts-locating service."
+    "🚗 Excellent service and great prices on auto parts! Found the exact part I needed for my car right away.",
+    "🔧 Great junkyard with well-organized inventory. The parts counter staff was knowledgeable and super helpful.",
+    "⚙️ Quality used auto parts in great condition. Saved a lot of money compared to buying brand new OEM parts.",
+    "⭐ Fast counter service, fair pricing, and huge selection of vehicle parts. Will definitely be back for future car repairs!"
   ],
   4: [
-    "📦 After checking yards all over Florida, M&K was the only place that had the exact matching truck door panel I needed in stock.",
-    "🤝 The mechanics here are incredibly trustworthy, explaining my brake issue clearly without trying to upsell me on unnecessary repairs.",
-    "🚗 They hooked me up with a used tire that looked brand new and had me safely back on the road in under 45 minutes.",
-    "⏱️ I dropped my car off in the morning and they sourced the rotors and finished my brake repair before lunch."
+    "🚘 Good selection of auto parts and friendly customer service. Found what I needed quickly at a fair price.",
+    "🛠️ Helpful staff and good prices on used car parts. Quick pickup process at the parts counter.",
+    "📦 Well-organized junkyard with lots of vehicle parts available. Great overall experience."
   ],
   3: [
-    "💰 They gave me a fair cash offer over the phone for my old sedan and picked it up with a free tow truck the same afternoon.",
-    "🚛 M&K made getting rid of my scrap car completely hassle-free by handling all the paperwork and providing fast, free towing.",
-    "🔧 Found the part I needed, though it took a little longer to locate in the inventory tracker than expected."
+    "📦 Found the auto part I needed, though the wait time at the parts counter was a bit long.",
+    "🔩 Decent selection of parts, but pricing was slightly higher than expected on certain items."
   ],
   2: [
-    "⚠️ Sourced the brake calipers okay, but the service queue was backed up and it took much longer than initially promised.",
-    "🔧 Yard carries a huge collection, but the website's listed inventory status wasn't fully up-to-date with actual stock."
+    "⚠️ Staff was polite, but the auto part I called ahead for was out of stock when I arrived.",
+    "🚘 Had trouble finding the specific car model part in stock today."
   ],
   1: [
-    "⚠️ Service delay experienced while locating inventory. Would appreciate faster communication from the counter staff.",
-    "❗ Part condition didn't match what was listed online. Hoping management can resolve check-in accuracy."
+    "⚠️ Long wait times at the counter and the part turned out to be incompatible. Hope service improves.",
+    "❗ Disappointed with the part availability and customer service speed today."
   ]
 };
 
-const RATING_SUGGESTIONS_ES: Record<number, string[]> = {
+const MANDK_SUGGESTIONS_ES: Record<number, string[]> = {
   5: [
-    "🛠️ M&K Auto Parts me ahorró muchísimo dinero al conseguir una transmisión usada de excelente calidad e instalarla por una fracción de lo que cotizaba la agencia.",
-    "⚡ Repararon mi auto por casi la mitad de precio que mi taller habitual porque tienen todos los repuestos ahí mismo.",
-    "🔍 Sus mecánicos certificados detectaron rápidamente un problema eléctrico que otros dos talleres locales no pudieron encontrar.",
-    "🌍 Me consiguieron una pieza de motor muy difícil de encontrar en menos de 24 horas."
+    "🚗 ¡Excelente servicio y excelentes precios en repuestos de autos! Encontré la pieza exacta que necesitaba para mi vehículo.",
+    "🔧 Gran inventario de autopartes usadas y nuevas. El personal en mostrador fue muy atento y conocedor.",
+    "⚙️ Piezas de auto de excelente calidad a un precio increíble. Ahorré mucho dinero en mi reparación.",
+    "⭐ Atención rápida, precios justos y gran variedad de partes para automóviles. ¡Totalmente recomendado!"
   ],
   4: [
-    "📦 Después de buscar por toda Florida, M&K fue el único lugar con la puerta de camioneta exacta que necesitaba en inventario.",
-    "🤝 Los mecánicos son sumamente confiables, me explicaron claramente el problema con mis frenos sin cobrarme reparaciones innecesarias.",
-    "🚗 Me pusieron una llanta usada que se veía como nueva y regresé a la carretera de forma segura en menos de 45 minutos.",
-    "⏱️ Dejé el carro por la mañana y terminaron el servicio de frenos antes del almuerzo."
+    "🚘 Buena variedad de autopartes y atención amable. Conseguí lo que buscaba a un precio razonable.",
+    "🛠️ Personal servicial y buenas piezas usadas. El proceso de atención en mostrador fue muy rápido.",
+    "📦 Depósito muy bien organizado y excelente surtido de partes para automóviles."
   ],
   3: [
-    "💰 Me dieron una oferta en efectivo justa por teléfono por mi viejo auto y lo pasaron a buscar con grúa gratis esa misma tarde.",
-    "🚛 M&K hizo que retirar mi auto chatarra fuera súper sencillo, encargándose de todo el papeleo y el remolque gratis.",
-    "🔧 Encontré el repuesto que necesitaba, aunque tardó un poco más de lo esperado en el mostrador."
+    "📦 Conseguí el repuesto para mi auto, aunque el tiempo de espera en el mostrador fue algo largo.",
+    "🔩 Buen surtido de partes, aunque algunos precios estaban un poco más altos de lo esperado."
   ],
   2: [
-    "⚠️ Conseguí los frenos bien, pero había bastante fila en el mostrador y tardó más de lo prometido inicialmente.",
-    "🔧 Tienen un inventario enorme, pero la información de stock en la web tardó en actualizarse."
+    "⚠️ El personal fue amable, pero la pieza por la que pregunté no estaba disponible al llegar.",
+    "🚘 Tuve dificultades para encontrar la pieza específica para mi modelo de auto hoy."
   ],
   1: [
-    "⚠️ Hubo demora en la atención al buscar la pieza. Sería excelente una comunicación más rápida del personal.",
-    "❗ La condición del repuesto no coincidía exactamente con la web. Espero que gerencia mejore la precisión del sistema."
+    "⚠️ Largas esperas en atención y la pieza no era la adecuada. Espero mejoren el control de stock.",
+    "❗ Mala experiencia con la disponibilidad de partes y la rapidez de atención hoy."
   ]
+};
+
+const WARTS_SUGGESTIONS_EN: Record<number, string[]> = {
+  5: [
+    "🎵 A truly unforgettable musical show! The live music, powerful vocals, and stage production were absolutely outstanding.",
+    "✨ Incredible musical performance from start to finish. The acoustics, lighting, and stage energy made it a magical night.",
+    "👏 Extraordinary talent on stage! The dedication and passion in every song was palpable. Would definitely see it again!",
+    "🌟 Flawless sound quality and amazing ensemble. Moved us deeply throughout the entire show. Highly recommended!"
+  ],
+  4: [
+    "🎶 Fantastic musical show with great songs and costumes. Really enjoyed the live musical arrangements.",
+    "🎭 Wonderful vocals and stage presence. A very polished production and great entertainment.",
+    "🎤 Great acoustic quality and talented live musicians. A wonderful musical evening."
+  ],
+  3: [
+    "🎟️ Enjoyable musical performance with talented artists, though seating organization could be improved.",
+    "🎼 Good live music and vocals, although some show segments felt a bit stretched."
+  ],
+  2: [
+    "⚠️ Great performer talent, but the sound volume was a bit too loud and drowned out some vocals.",
+    "🎭 Good artists, but intermission delays affected the show pacing."
+  ],
+  1: [
+    "⚠️ Venue audio issues disrupted the musical performance. Hope management improves sound balancing.",
+    "❗ Organization delays at entry affected our show experience."
+  ]
+};
+
+const WARTS_SUGGESTIONS_ES: Record<number, string[]> = {
+  5: [
+    "🎵 ¡Un espectáculo musical verdaderamente inolvidable! La música en vivo, las voces de los artistas y la puesta en escena fueron espectaculares.",
+    "✨ Una producción musical increíble de principio a fin. El sonido, las luces y la energía del elenco hicieron de esta una noche mágica.",
+    "👏 ¡Extraordinario talento en el escenario! Se nota la dedicación y pasión en cada canción e interpretación. Volvería a verlo sin dudarlo.",
+    "🌟 Excelente organización y una acústica impecable. Nos emocionamos muchísimo durante todo el show. ¡Totalmente recomendado!"
+  ],
+  4: [
+    "🎶 Gran espectáculo musical con excelentes canciones y vestuario. Disfrutamos muchísimo de toda la presentación en vivo.",
+    "🎭 La actuación y las voces fueron maravillosas. Un show muy bien producido y muy entretenido para toda la familia.",
+    "🎤 Muy buena acústica y grandes músicos en escena. Una experiencia artística hermosa."
+  ],
+  3: [
+    "🎟️ El espectáculo musical estuvo muy bonito y los artistas demostraron gran talento, aunque el inicio tuvo un pequeño retraso.",
+    "🎼 Buena música y buenas interpretaciones, aunque algunas secciones del show se sintieron algo largas."
+  ],
+  2: [
+    "⚠️ Los artistas tienen mucho talento, pero el volumen del sonido estuvo demasiado alto y dificultaba escuchar las voces claramente.",
+    "🎭 Buenos cantantes y músicos, aunque la pausa intermedia del show se extendió más de lo esperado."
+  ],
+  1: [
+    "⚠️ Problemas con el sonido y la acústica que afectaron la experiencia del show. Espero puedan ajustarlo.",
+    "❗ Demoras en el ingreso y la organización del recinto afectaron la experiencia del espectáculo."
+  ]
+};
+
+const getClientStoredLanguage = (clientId: string): Language => {
+  const norm = clientId.trim().toLowerCase();
+  try {
+    const saved = localStorage.getItem(`g_app_language_${norm}`);
+    if (saved === 'es' || saved === 'en') {
+      return saved as Language;
+    }
+  } catch {}
+
+  if (norm.includes('w-arts') || norm.includes('warts')) {
+    return 'es';
+  }
+  return 'en';
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -74,27 +138,45 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     try {
-      const saved = localStorage.getItem('g_app_language');
-      if (saved === 'es' || saved === 'en') {
-        return saved;
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlClientId = urlParams ? (urlParams.get('client') || urlParams.get('clientId')) : null;
+      const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+      
+      let activeId = 'mandk';
+      if (urlClientId) {
+        activeId = urlClientId;
+      } else if (hostname.includes('mandk-app') || hostname.includes('mandk') || hostname.includes('-pre-') || (!hostname.includes('-dev-') && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
+        activeId = 'mandk';
+      } else {
+        activeId = localStorage.getItem('g_active_client_id') || 'mandk';
       }
-      if (navigator.language && navigator.language.toLowerCase().startsWith('es')) {
-        return 'es';
-      }
-      return 'en';
+      return getClientStoredLanguage(activeId);
     } catch {
       return 'en';
     }
   });
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = (lang: Language, clientId?: string) => {
     setLanguageState(lang);
     try {
       localStorage.setItem('g_app_language', lang);
       document.documentElement.lang = lang;
+
+      const targetId = clientId || localStorage.getItem('g_active_client_id') || 'mandk';
+      const norm = targetId.trim().toLowerCase();
+      localStorage.setItem(`g_app_language_${norm}`, lang);
     } catch (e) {
       console.warn('Could not save language preference:', e);
     }
+  };
+
+  const syncClientLanguage = (clientId: string) => {
+    const lang = getClientStoredLanguage(clientId);
+    setLanguageState(lang);
+    try {
+      localStorage.setItem('g_app_language', lang);
+      document.documentElement.lang = lang;
+    } catch {}
   };
 
   useEffect(() => {
@@ -132,9 +214,17 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     return text;
   };
 
-  const getRatingSuggestions = (rating: number): string[] => {
-    const map = language === 'es' ? RATING_SUGGESTIONS_ES : RATING_SUGGESTIONS_EN;
-    return map[rating] || map[5];
+  const getRatingSuggestions = (rating: number, clientId?: string): string[] => {
+    const normId = (clientId || localStorage.getItem('g_active_client_id') || 'mandk').toLowerCase();
+    const isWArts = normId.includes('w-arts') || normId.includes('warts');
+    
+    if (isWArts) {
+      const map = language === 'es' ? WARTS_SUGGESTIONS_ES : WARTS_SUGGESTIONS_EN;
+      return map[rating] || map[5];
+    } else {
+      const map = language === 'es' ? MANDK_SUGGESTIONS_ES : MANDK_SUGGESTIONS_EN;
+      return map[rating] || map[5];
+    }
   };
 
   const isSpanish = language === 'es';
@@ -144,6 +234,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       value={{
         language,
         setLanguage,
+        syncClientLanguage,
         t,
         isSpanish,
         getRatingSuggestions,

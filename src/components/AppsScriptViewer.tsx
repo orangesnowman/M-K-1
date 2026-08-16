@@ -70,10 +70,10 @@ function onFormSubmit(e) {
   // 4. Branching routing logic based on the numeric rating
   if (ratingNumber === 5) {
     subject = \`${routingConfig.excellentSubject.replace(/`/g, '\\`').replace(/\${name}/g, '` + name + `')}\`;
-    body = \`${routingConfig.excellentBody.replace(/`/g, '\\`').replace(/\${name}/g, '` + name + `').replace(/\${comments}/g, '` + comments + `').replace(/\${googleReviewsUrl}/g, routingConfig.googleReviewsUrl || 'https://g.page/r/CajrrF4R_V20EAI/review').replace(/\${signature}/g, '` + BUSINESS_SIGNATURE + `')}\`;
+    body = \`${routingConfig.excellentBody.replace(/`/g, '\\`').replace(/\${name}/g, '` + name + `').replace(/\${comments}/g, '` + comments + `').replace(/\${googleReviewsUrl}/g, routingConfig.googleReviewsUrl || 'https://g.page/r/CWU_opvS6RMREAI/review').replace(/\${signature}/g, '` + BUSINESS_SIGNATURE + `')}\`;
   } else if (ratingNumber === 4) {
     subject = \`${routingConfig.goodSubject.replace(/`/g, '\\`').replace(/\${name}/g, '` + name + `')}\`;
-    body = \`${routingConfig.goodBody.replace(/`/g, '\\`').replace(/\${name}/g, '` + name + `').replace(/\${comments}/g, '` + (comments || "(No suggestions shared)") + `').replace(/\${googleReviewsUrl}/g, routingConfig.googleReviewsUrl || 'https://g.page/r/CajrrF4R_V20EAI/review').replace(/\${signature}/g, '` + BUSINESS_SIGNATURE + `')}\`;
+    body = \`${routingConfig.goodBody.replace(/`/g, '\\`').replace(/\${name}/g, '` + name + `').replace(/\${comments}/g, '` + (comments || "(No suggestions shared)") + `').replace(/\${googleReviewsUrl}/g, routingConfig.googleReviewsUrl || 'https://g.page/r/CWU_opvS6RMREAI/review').replace(/\${signature}/g, '` + BUSINESS_SIGNATURE + `')}\`;
   } else {
     // 1-3 Stars (Poor Feedback Escalation)
     subject = \`${routingConfig.poorSubject.replace(/`/g, '\\`').replace(/\${name}/g, '` + name + `')}\`;

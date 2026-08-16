@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Settings, Sliders, Mail, Link as LinkIcon, Star, CheckSquare, Sparkles, Building2, HelpCircle, Save, Check, FileCode, Play, AlertTriangle } from 'lucide-react';
+import { Settings, Sliders, Mail, Link as LinkIcon, Star, CheckSquare, Sparkles, Building2, HelpCircle, Save, Check, FileCode, Play, RefreshCw, AlertTriangle } from 'lucide-react';
 import { RoutingConfiguration } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface LogicParametersTabProps {
   routingConfig: RoutingConfiguration;
@@ -15,6 +16,7 @@ export default function LogicParametersTab({
   onNavigateToScript,
   onNavigateToSandbox
 }: LogicParametersTabProps) {
+  const { language, t } = useLanguage();
   const [savedNotice, setSavedNotice] = useState(false);
 
   const handleInputChange = (field: keyof RoutingConfiguration, value: any) => {
@@ -37,12 +39,12 @@ export default function LogicParametersTab({
               <Settings className="w-5 h-5" />
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider text-red-400 bg-red-950/60 px-2.5 py-1 rounded-full border border-red-800/40">
-              Automation Configuration
+              {t('logic.tag', 'Automation Configuration')}
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Logic Parameters</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('logic.title', 'Logic Parameters')}</h2>
           <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-            Configure the default routing rules, email notification addresses, business signatures, review URLs, and threshold limits embedded in your feedback pipeline.
+            {t('logic.desc', 'Configure the default routing rules, email notification addresses, business signatures, review URLs, and threshold limits embedded in your feedback pipeline.')}
           </p>
         </div>
 
@@ -50,20 +52,10 @@ export default function LogicParametersTab({
           {onNavigateToSandbox && (
             <button
               onClick={onNavigateToSandbox}
-              className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer border border-zinc-700 active:scale-95"
-            >
-              <Play className="w-3.5 h-3.5 text-yellow-400" />
-              <span>Test in Simulator</span>
-            </button>
-          )}
-
-          {onNavigateToScript && (
-            <button
-              onClick={onNavigateToScript}
               className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md cursor-pointer active:scale-95"
             >
-              <FileCode className="w-3.5 h-3.5" />
-              <span>View Apps Script Code</span>
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>{t('logic.updateSim', 'Update Simulator')}</span>
             </button>
           )}
         </div>
@@ -72,7 +64,7 @@ export default function LogicParametersTab({
       {savedNotice && (
         <div className="p-3.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-xs font-semibold animate-fade-in shadow-2xs">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>Logic parameters updated and saved across all dispatch channels.</span>
+          <span>{t('logic.savedNotice', 'Logic parameters updated and saved across all dispatch channels.')}</span>
         </div>
       )}
 
@@ -89,8 +81,8 @@ export default function LogicParametersTab({
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Brand & Dispatch Identity</h3>
-                <p className="text-xs text-slate-500">Set support recipient email, brand logo, and email sign-off.</p>
+                <h3 className="font-bold text-slate-900 text-base">{t('logic.brandIdentity', 'Brand & Dispatch Identity')}</h3>
+                <p className="text-xs text-slate-500">{t('logic.brandDesc', 'Set support recipient email, brand logo, and email sign-off.')}</p>
               </div>
             </div>
 
@@ -98,8 +90,8 @@ export default function LogicParametersTab({
               {/* Company Logo Location */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>Company Logo Resource Location (URL / Asset)</span>
-                  <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
+                  <span>{t('logic.logoLabel', 'Company Logo Resource Location (URL / Asset)')}</span>
+                  <span className="text-[10px] font-normal text-slate-400">{t('logic.optional', '(Optional)')}</span>
                 </label>
                 <input
                   type="url"
@@ -110,14 +102,14 @@ export default function LogicParametersTab({
                   id="tab-company-logo-url-input"
                 />
                 <span className="text-[11px] text-slate-400 block mt-1">
-                  Hosted logo asset URL embedded into automated customer email headers.
+                  {t('logic.logoHint', 'Hosted logo asset URL embedded into automated customer email headers.')}
                 </span>
               </div>
 
               {/* Support Email */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Support Team Notification Email (Internal Alert for 1-3 Stars)
+                  {t('logic.supportEmailLabel', 'Support Team Notification Email (Internal Alert for 1-3 Stars)')}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -131,26 +123,31 @@ export default function LogicParametersTab({
                   />
                 </div>
                 <span className="text-[11px] text-slate-400 block mt-1">
-                  Receives carbon copies and urgent escalation alerts when negative ratings (1-3 stars) occur.
+                  {t('logic.supportEmailHint', 'Receives carbon copies and urgent escalation alerts when negative ratings (1-3 stars) occur.')}
                 </span>
               </div>
 
               {/* Business Signature Area */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>Business Signature Area</span>
-                  <span className="text-[10px] text-slate-400 font-normal">(Included in email sign-off)</span>
+                  <span>{t('logic.signatureLabel', 'Business Signature Area')}</span>
+                  <span className="text-[10px] text-slate-400 font-normal">{t('logic.signatureSub', '(Included in email sign-off)')}</span>
                 </label>
                 <textarea
                   rows={3}
-                  value={routingConfig.businessSignature ?? 'Warmest regards,\nThe M&K Customer Team'}
+                  value={
+                    routingConfig.businessSignature &&
+                    routingConfig.businessSignature !== 'Warmest regards,\nThe M&K Customer Team'
+                      ? routingConfig.businessSignature.replace('Un saludo calido', 'Un saludo cálido')
+                      : (language === 'es' ? 'Un saludo cálido,\nEl equipo de M&K' : (routingConfig.businessSignature || 'Warmest regards,\nThe M&K Customer Team'))
+                  }
                   onChange={(e) => handleInputChange('businessSignature', e.target.value)}
-                  placeholder="e.g. Warmest regards,&#10;The M&K Customer Team&#10;support@yourcompany.com"
+                  placeholder={language === 'es' ? 'ej. Un saludo cálido,\nEl equipo de M&K\nsoporte@tuempresa.com' : 'e.g. Warmest regards,\nThe M&K Customer Team\nsupport@yourcompany.com'}
                   className="w-full text-sm px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all font-sans leading-relaxed"
                   id="tab-business-signature-input"
                 />
                 <span className="text-[11px] text-slate-400 block mt-1">
-                  Appended dynamically as the sign-off block at the end of outbound follow-up emails.
+                  {t('logic.signatureHint', 'Appended dynamically as the sign-off block at the end of outbound follow-up emails.')}
                 </span>
               </div>
             </div>
@@ -163,8 +160,8 @@ export default function LogicParametersTab({
                 <Sliders className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Feedback Threshold & Gateways</h3>
-                <p className="text-xs text-slate-500">Define rating cutoffs between public review links vs internal feedback.</p>
+                <h3 className="font-bold text-slate-900 text-base">{t('logic.thresholdTitle', 'Feedback Threshold & Gateways')}</h3>
+                <p className="text-xs text-slate-500">{t('logic.thresholdDesc', 'Define rating cutoffs between public review links vs internal feedback.')}</p>
               </div>
             </div>
 
@@ -172,7 +169,7 @@ export default function LogicParametersTab({
               {/* Star Threshold */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Direct Feedback Star Threshold
+                  {t('logic.starThresholdLabel', 'Direct Feedback Star Threshold')}
                 </label>
                 <select
                   value={routingConfig.starThreshold}
@@ -180,21 +177,40 @@ export default function LogicParametersTab({
                   className="w-full text-sm px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all font-sans bg-white font-medium"
                   id="tab-star-threshold-select"
                 >
-                  <option value="1">1 Star or fewer (Bypass public reviews for 1 Star)</option>
-                  <option value="2">2 Stars or fewer (Bypass public reviews for 1-2 Stars)</option>
-                  <option value="3">3 Stars or fewer (Default: Bypass public reviews for 1-3 Stars)</option>
-                  <option value="4">4 Stars or fewer (Bypass public reviews for 1-4 Stars)</option>
-                  <option value="5">5 Stars or fewer (Bypass public reviews for all ratings)</option>
+                  <option value="1">{t('logic.starOpt1', '1 Star or fewer (Bypass public reviews for 1 Star)')}</option>
+                  <option value="2">{t('logic.starOpt2', '2 Stars or fewer (Bypass public reviews for 1-2 Stars)')}</option>
+                  <option value="3">{t('logic.starOpt3', '3 Stars or fewer (Default: Bypass public reviews for 1-3 Stars)')}</option>
+                  <option value="4">{t('logic.starOpt4', '4 Stars or fewer (Bypass public reviews for 1-4 Stars)')}</option>
+                  <option value="5">{t('logic.starOpt5', '5 Stars or fewer (Bypass public reviews for all ratings)')}</option>
                 </select>
                 <span className="text-[11px] text-slate-400 block mt-1">
-                  Ratings equal to or below this threshold trigger direct management escalation instead of Google Reviews link.
+                  {t('logic.thresholdHint', 'Ratings equal to or below this threshold trigger direct management escalation instead of Google Reviews link.')}
+                </span>
+              </div>
+
+              {/* Private Feedback Google Form URL (1-3 Stars) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>{t('logic.privateUrlLabel', 'Private Feedback Form URL (1-3 Stars)')}</span>
+                  <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
+                </label>
+                <input
+                  type="url"
+                  value={routingConfig.privateFeedbackUrl || 'https://docs.google.com/forms/d/e/1FAIpQLSc_LogQ1N6I7x2FQyva007AOdoa-BPcYc886Gxz207WWBccyA/viewform'}
+                  onChange={(e) => handleInputChange('privateFeedbackUrl', e.target.value)}
+                  placeholder="e.g. https://docs.google.com/forms/d/e/1FAIpQLSc_LogQ1N6I7x2FQyva007AOdoa-BPcYc886Gxz207WWBccyA/viewform"
+                  className="w-full text-sm px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all font-mono"
+                  id="tab-private-feedback-url-input"
+                />
+                <span className="text-[11px] text-slate-400 block mt-1">
+                  {t('logic.privateUrlHint', 'Destination form URL opened when customers submit ratings of 3 stars or under.')}
                 </span>
               </div>
 
               {/* Google Reviews Directory URL */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>Google Reviews Directory URL (Public Reviews)</span>
+                  <span>{t('logic.googleUrlLabel', 'Google Reviews Directory URL (Public Reviews)')}</span>
                   <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
                 </label>
                 <input
@@ -206,7 +222,7 @@ export default function LogicParametersTab({
                   id="tab-google-reviews-url-input"
                 />
                 <span className="text-[11px] text-slate-400 block mt-1">
-                  Included in 4 & 5-Star email templates to encourage public Google reviews.
+                  {t('logic.googleUrlHint', 'Included in 4 & 5-Star email templates to encourage public Google reviews.')}
                 </span>
               </div>
             </div>
@@ -224,8 +240,8 @@ export default function LogicParametersTab({
                 <LinkIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Additional Review Platforms</h3>
-                <p className="text-xs text-slate-500">Enable secondary platforms (Facebook, Yelp, BBB) for sequential sharing.</p>
+                <h3 className="font-bold text-slate-900 text-base">{t('logic.additionalPlatforms', 'Additional Review Platforms')}</h3>
+                <p className="text-xs text-slate-500">{t('logic.additionalDesc', 'Enable secondary platforms (Facebook, Yelp, BBB) for sequential sharing.')}</p>
               </div>
             </div>
 
@@ -240,7 +256,7 @@ export default function LogicParametersTab({
                       onChange={(e) => handleInputChange('facebookEnabled', e.target.checked)}
                       className="rounded border-slate-300 text-red-600 focus:ring-red-500 w-4 h-4"
                     />
-                    <span>Facebook Review Link</span>
+                    <span>{t('logic.fbLabel', 'Facebook Review Link')}</span>
                   </label>
                 </div>
                 {routingConfig.facebookEnabled && (
@@ -264,7 +280,7 @@ export default function LogicParametersTab({
                       onChange={(e) => handleInputChange('yelpEnabled', e.target.checked)}
                       className="rounded border-slate-300 text-red-600 focus:ring-red-500 w-4 h-4"
                     />
-                    <span>Yelp Review Link</span>
+                    <span>{t('logic.yelpLabel', 'Yelp Review Link')}</span>
                   </label>
                 </div>
                 {routingConfig.yelpEnabled && (
@@ -288,7 +304,7 @@ export default function LogicParametersTab({
                       onChange={(e) => handleInputChange('bbbEnabled', e.target.checked)}
                       className="rounded border-slate-300 text-red-600 focus:ring-red-500 w-4 h-4"
                     />
-                    <span>Better Business Bureau (BBB) Link</span>
+                    <span>{t('logic.bbbLabel', 'Better Business Bureau (BBB) Link')}</span>
                   </label>
                 </div>
                 {routingConfig.bbbEnabled && (
@@ -311,15 +327,15 @@ export default function LogicParametersTab({
                 <Mail className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Outbound Email Subject Templates</h3>
-                <p className="text-xs text-slate-500">Customize the subject lines dispatched to customers based on rating level.</p>
+                <h3 className="font-bold text-slate-900 text-base">{t('logic.emailSubjectsTitle', 'Outbound Email Subject Templates')}</h3>
+                <p className="text-xs text-slate-500">{t('logic.emailSubjectsDesc', 'Customize the subject lines dispatched to customers based on rating level.')}</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>Excellent Rating (5 Stars)</span>
+                  <span>{t('logic.excellentLabel', 'Excellent Rating (5 Stars)')}</span>
                   <span className="text-[10px] text-amber-500 font-bold">⭐⭐⭐⭐⭐</span>
                 </label>
                 <input
@@ -333,7 +349,7 @@ export default function LogicParametersTab({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>Good Rating (4 Stars)</span>
+                  <span>{t('logic.goodLabel', 'Good Rating (4 Stars)')}</span>
                   <span className="text-[10px] text-amber-500 font-bold">⭐⭐⭐⭐</span>
                 </label>
                 <input
@@ -347,7 +363,7 @@ export default function LogicParametersTab({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>Poor Rating (1-3 Stars Escalation)</span>
+                  <span>{t('logic.poorLabel', 'Poor Rating (1-3 Stars Escalation)')}</span>
                   <span className="text-[10px] text-red-500 font-bold">⚠️ Urgent Alert</span>
                 </label>
                 <input

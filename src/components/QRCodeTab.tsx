@@ -20,17 +20,20 @@ import {
 } from 'lucide-react';
 import qrMockup from '../assets/images/feedback_portal_qrcode_1783873611840.jpg';
 import socialThumbnail from '../assets/images/social_thumbnail_1784151879380.jpg';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface QRCodeTabProps {
   activeClientName: string;
   activeClientId: string;
+  activeClientAppUrl?: string;
 }
 
 type QRTheme = 'classic-light' | 'cyber-dark';
 type QRColor = 'pure-bw' | 'slate-grey';
 type LogoStyle = 'monochromatic' | 'crimson';
 
-export default function QRCodeTab({ activeClientName, activeClientId }: QRCodeTabProps) {
+export default function QRCodeTab({ activeClientName, activeClientId, activeClientAppUrl }: QRCodeTabProps) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   
@@ -81,7 +84,29 @@ export default function QRCodeTab({ activeClientName, activeClientId }: QRCodeTa
 
   // Get exact live application URL for this client
   const getLiveUrl = () => {
-    return `https://mandk-app-394492155492.us-west1.run.app/?mode=live&client=${activeClientId}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const baseUrl = origin.includes('-dev-') ? origin.replace('-dev-', '-pre-') : origin;
+    const targetId = activeClientId.toLowerCase().includes('w-arts') || activeClientId === 'client_1786751504755' ? 'w-arts' : activeClientId;
+
+    if (targetId === 'mandk' || activeClientId.toLowerCase().includes('mandk')) {
+      if (activeClientAppUrl && activeClientAppUrl.trim() !== '' && !activeClientAppUrl.includes('w-arts') && !activeClientAppUrl.includes('mandk-app') && !activeClientAppUrl.includes('.ai.studio')) {
+        return activeClientAppUrl.trim();
+      }
+      return `${baseUrl}?mode=live&client=mandk`;
+    }
+
+    if (targetId === 'w-arts') {
+      if (activeClientAppUrl && activeClientAppUrl.trim() !== '' && !activeClientAppUrl.includes('mandk') && !activeClientAppUrl.includes('mandk-app') && !activeClientAppUrl.includes('.ai.studio')) {
+        return activeClientAppUrl.trim();
+      }
+      return `${baseUrl}?mode=live&client=w-arts`;
+    }
+
+    if (activeClientAppUrl && activeClientAppUrl.trim() !== '' && !activeClientAppUrl.includes('mandk-app') && !activeClientAppUrl.includes('.ai.studio')) {
+      return activeClientAppUrl.trim();
+    }
+
+    return `${baseUrl}?mode=live&client=${encodeURIComponent(targetId)}`;
   };
 
   const liveUrl = getLiveUrl();
@@ -256,7 +281,36 @@ export default function QRCodeTab({ activeClientName, activeClientId }: QRCodeTa
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in" id="qr-code-section">
+    <div className="space-y-8 animate-fade-in" id="qr-code-section">
+      {/* Top Header Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-zinc-900 rounded-3xl p-6 sm:p-8 border border-slate-700/80 shadow-xl text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 bg-purple-500/20 text-purple-400 rounded-xl border border-purple-500/30">
+              <QrCode className="w-5 h-5" />
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-purple-400 bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-800/40">
+              {t('qr.tag', 'Print & Display Asset')}
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('qr.title', 'QR Code')}</h2>
+          <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
+            {t('qr.headerDesc', 'Generate high-resolution, branded QR codes for counter standees, flyers, receipts, and print media to capture live customer feedback instantly.')}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            onClick={handlePrint}
+            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md cursor-pointer active:scale-95"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Print / Export QR</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* QR Code Presentation Panel */}
       <div className="lg:col-span-5 flex flex-col h-full space-y-6">
         <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm flex-1 flex flex-col items-start text-left justify-between">
@@ -653,6 +707,7 @@ export default function QRCodeTab({ activeClientName, activeClientId }: QRCodeTa
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

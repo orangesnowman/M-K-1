@@ -4,6 +4,7 @@ import { FileSpreadsheet, FileCode, CheckCircle2, ArrowRight } from 'lucide-reac
 import { WorkspaceResources, ReviewRecord, RoutingConfiguration } from '../types';
 import FeedbackPipelineSetup from './FeedbackPipelineSetup';
 import AppsScriptViewer from './AppsScriptViewer';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface SheetAndScriptTabProps {
   user: User | null;
@@ -36,6 +37,8 @@ export default function SheetAndScriptTab({
   routingConfig,
   onConfigChange
 }: SheetAndScriptTabProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="max-w-6xl mx-auto space-y-10" id="sheet-and-script-unified-tab">
       
@@ -47,12 +50,12 @@ export default function SheetAndScriptTab({
               <FileSpreadsheet className="w-5 h-5" />
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-800/40">
-              Complete Google Workspace Pipeline
+              {t('setup.pipelineTag', 'Complete Google Workspace Pipeline')}
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Google Sheet</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('setup.pipelineTitle', 'Google Sheet')}</h2>
           <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-            Provision your Google Sheet database, manage live feedback records, and deploy the Google Apps Script automation trigger all in one unified workspace.
+            {t('setup.pipelineDesc', 'Provision your Google Sheet database, manage live feedback records, and deploy the Google Apps Script automation trigger all in one unified workspace.')}
           </p>
         </div>
 
@@ -60,7 +63,7 @@ export default function SheetAndScriptTab({
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
           <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs font-semibold text-emerald-300 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>Sheet & Script Synchronized</span>
+            <span>{t('setup.syncedStatus', 'Sheet & Script Synchronized')}</span>
           </div>
         </div>
       </div>
@@ -74,10 +77,10 @@ export default function SheetAndScriptTab({
           <div>
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-              <span>Google Sheet Database & Feedback Logs</span>
+              <span>{t('setup.part1Title', 'Google Sheet Database & Feedback Logs')}</span>
             </h3>
             <p className="text-xs text-slate-500">
-              Provision or link your Google Sheet spreadsheet to automatically record customer submissions.
+              {t('setup.part1Desc', 'Provision or link your Google Sheet spreadsheet to automatically record customer submissions.')}
             </p>
           </div>
         </div>

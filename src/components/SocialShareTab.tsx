@@ -1,691 +1,648 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Share2, 
-  Globe, 
-  Info, 
-  Copy, 
-  Check, 
-  Sparkles, 
-  Smartphone, 
-  ExternalLink,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Upload,
-  Image as ImageIcon,
-  Trash2,
-  RefreshCw,
-  AlertCircle
-} from 'lucide-react';
-import socialThumbnail from '../assets/images/social_thumbnail_1784151879380.jpg';
+import React, { useState, useEffect } from 'react';
+import { Image as ImageIcon, Check, RefreshCw, Save, Share2, Layers, AlignCenter, ArrowUp, ArrowDown, Sparkles, Copy, ExternalLink, Globe, Link2 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface SocialShareTabProps {
-  activeClientName: string;
-  activeClientId: string;
+  activeClientName?: string;
+  defaultDestinationUrl?: string;
+  activeClientId?: string;
+  activeClientAppUrl?: string;
 }
 
-type Platform = 'facebook' | 'twitter' | 'linkedin';
+const REVIEW_BENEFIT_VARIATIONS_EN = [
+  {
+    title: 'Help Local Drivers & Save on Quality Auto Parts',
+    description: 'Your 5-star review helps fellow vehicle owners find trusted, affordable used auto parts and fast local service in Vero Beach!'
+  },
+  {
+    title: 'Why Reviews Matter: Trusted Local Auto Repair',
+    description: 'Leaving a review supports local mechanics and helps drivers discover reliable, warrantied used engines and transmissions at M&K.'
+  },
+  {
+    title: 'Share Your M&K Experience & Support Quality Service',
+    description: 'Customer reviews help us maintain high quality standards, fair scrap car payouts, and fast 24/7 parts sourcing for our community.'
+  },
+  {
+    title: 'Empower Local Vehicle Owners with Honest Feedback',
+    description: 'Good reviews empower local drivers to save money on car repairs and make confident decisions with trusted auto parts.'
+  },
+  {
+    title: 'Rate Your Experience with M&K Auto Parts',
+    description: 'Your feedback helps us continuously improve our service and ensures drivers always get top value and friendly local care.'
+  },
+  {
+    title: 'M&K Customer Reviews & Community Trust',
+    description: 'Positive customer reviews build community trust, helping drivers find tested auto components at a fraction of dealership prices.'
+  }
+];
 
-export default function SocialShareTab({ activeClientName, activeClientId }: SocialShareTabProps) {
-  const [activePlatform, setActivePlatform] = useState<Platform>('facebook');
+const REVIEW_BENEFIT_VARIATIONS_ES = [
+  {
+    title: 'Ayuda a conductores locales y ahorra en repuestos de calidad',
+    description: '¡Tu reseña de 5 estrellas ayuda a otros conductores a encontrar repuestos usados confiables y económicos con atención rápida en Vero Beach!'
+  },
+  {
+    title: 'Por qué importan las opiniones: Reparación local confiable',
+    description: 'Dejar una opinión apoya a los mecánicos locales y ayuda a los conductores a descubrir motores y transmisiones usadas con garantía.'
+  },
+  {
+    title: 'Comparte tu experiencia M&K y apoya un servicio de calidad',
+    description: 'Las reseñas de clientes nos ayudan a mantener altos estándares de calidad, pagos justos por autos chatarra y entrega rápida 24/7.'
+  },
+  {
+    title: 'Impulsa a conductores locales con opiniones honestas',
+    description: 'Las opiniones positivas ayudan a los conductores locales a ahorrar en reparaciones y tomar decisiones con repuestos automotrices de confianza.'
+  },
+  {
+    title: 'Califica tu experiencia con M&K Auto Parts',
+    description: 'Tus comentarios nos ayudan a mejorar continuamente nuestro servicio y aseguran que los conductores reciban la mejor atención.'
+  },
+  {
+    title: 'Reseñas de clientes M&K y confianza en la comunidad',
+    description: 'Las reseñas construyen confianza comunitaria, ayudando a conductores a conseguir componentes garantizados a una fracción del precio de concesionario.'
+  }
+];
+
+export function formatDriveUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  const trimmed = rawUrl.trim();
+
+  // Match /file/d/FILE_ID
+  const fileDMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileDMatch && fileDMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${fileDMatch[1]}`;
+  }
+
+  // Match id=FILE_ID in drive or docs link
+  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (idMatch && idMatch[1] && (trimmed.includes('drive.google.com') || trimmed.includes('docs.google.com'))) {
+    return `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+  }
+
+  return trimmed;
+}
+
+export default function SocialShareTab({
+  activeClientName = 'M&K Used Auto Parts',
+  activeClientId = 'mandk',
+  activeClientAppUrl = ''
+}: SocialShareTabProps) {
+  const { t, isSpanish } = useLanguage();
+  const isWArts = activeClientId.toLowerCase().includes('w-arts') || activeClientId === 'client_1786751504755';
+
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedText, setCopiedText] = useState(false);
-  const [customThumbnail, setCustomThumbnail] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [posX, setPosX] = useState<number>(50);
-  const [posY, setPosY] = useState<number>(50);
 
-  // Load custom thumbnail for this client if it exists
-  useEffect(() => {
-    const saved = localStorage.getItem(`mk_custom_thumbnail_${activeClientId}`);
-    const savedX = localStorage.getItem(`mk_custom_thumbnail_pos_x_${activeClientId}`);
-    const savedY = localStorage.getItem(`mk_custom_thumbnail_pos_y_${activeClientId}`);
-    const px = savedX ? parseInt(savedX, 10) : 50;
-    const py = savedY ? parseInt(savedY, 10) : 50;
+  const getShareableUrl = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const baseUrl = origin.includes('-dev-') ? origin.replace('-dev-', '-pre-') : origin;
 
-    if (saved) {
-      setCustomThumbnail(saved);
-      // Proactively sync existing browser thumbnail to server on mount to ensure server has it
-      saveThumbnailToServer(saved, px, py);
-    } else {
-      setCustomThumbnail(null);
+    if (activeClientId.toLowerCase().includes('w-arts') || activeClientId === 'client_1786751504755') {
+      if (activeClientAppUrl && activeClientAppUrl.trim() !== '' && !activeClientAppUrl.includes('mandk') && !activeClientAppUrl.includes('mandk-app') && !activeClientAppUrl.includes('.ai.studio')) {
+        return activeClientAppUrl.trim();
+      }
+      return `${baseUrl}/w-arts`;
     }
 
-    setPosX(px);
-    setPosY(py);
-    setUploadError(null);
-  }, [activeClientId]);
+    if (activeClientId.toLowerCase().includes('mandk') || activeClientId === 'mandk') {
+      if (activeClientAppUrl && activeClientAppUrl.trim() !== '' && !activeClientAppUrl.includes('w-arts') && !activeClientAppUrl.includes('mandk-app') && !activeClientAppUrl.includes('.ai.studio')) {
+        return activeClientAppUrl.trim();
+      }
+      return `${baseUrl}/mandk`;
+    }
 
-  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    if (activeClientAppUrl && activeClientAppUrl.trim() !== '' && !activeClientAppUrl.includes('mandk-app') && !activeClientAppUrl.includes('.ai.studio')) {
+      return activeClientAppUrl.trim();
+    }
 
-  const saveThumbnailToServer = async (img: string | null, px: number, py: number) => {
+    return `${baseUrl}/${encodeURIComponent(activeClientId)}`;
+  };
+
+  const handleCopyShareableUrl = () => {
+    const url = getShareableUrl();
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const DEFAULT_IMAGE = isWArts 
+    ? `/api/custom-thumbnail?client=w-arts`
+    : 'https://lh3.googleusercontent.com/d/19E4sOfw2iI6VXsijt6jHKZ0cZzdZ4pB2';
+  const DEFAULT_TITLE = isWArts
+    ? 'W-Arts - ¿Qué le pareció nuestro espectáculo?'
+    : (isSpanish ? 'Portal de Opiniones de Clientes M&K' : 'M&K Customer Feedback Portal');
+  const DEFAULT_DESC = isWArts
+    ? 'Déjanos tu opinión y comentarios sobre nuestro espectáculo. ¡Tu valoración ayuda a mejorar cada presentación de W-Arts!'
+    : (isSpanish ? 'Una breve descripción de la experiencia de opinión de clientes M&K.' : 'A short description of the M&K customer feedback experience.');
+  const DEFAULT_DOMAIN = isWArts ? 'WARTSPRODUCCIONES.COM' : 'MANDKUSEDAUTOPARTS.COM';
+
+  const [imageUrlInput, setImageUrlInput] = useState(DEFAULT_IMAGE);
+  const [posX, setPosX] = useState(50);
+  const [posY, setPosY] = useState(20); // Default to 20% vertical to keep heads/faces framed
+  const [shareTitle, setShareTitle] = useState(DEFAULT_TITLE);
+  const [shareDescription, setShareDescription] = useState(DEFAULT_DESC);
+
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const [benefitIndex, setBenefitIndex] = useState(0);
+  const [isImprovingText, setIsImprovingText] = useState(false);
+
+  const variations = isSpanish ? REVIEW_BENEFIT_VARIATIONS_ES : REVIEW_BENEFIT_VARIATIONS_EN;
+
+  const handleImproveText = async () => {
+    setIsImprovingText(true);
+    const nextIdx = (benefitIndex + 1) % variations.length;
+    setBenefitIndex(nextIdx);
+    const fallback = variations[nextIdx];
+
+    // Instantly apply next curated benefit text
+    setShareTitle(fallback.title);
+    setShareDescription(fallback.description);
+
     try {
-      if (img) {
-        const response = await fetch('/api/custom-thumbnail', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            clientId: activeClientId,
-            image: img,
-            posX: px,
-            posY: py,
-          }),
-        });
-        if (!response.ok) {
-          console.error('[SocialShareTab] Failed to save custom thumbnail to server:', response.statusText);
-        } else {
-          console.log('[SocialShareTab] Custom thumbnail synced to server successfully');
-        }
-      } else {
-        const response = await fetch('/api/custom-thumbnail', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            clientId: activeClientId,
-          }),
-        });
-        if (!response.ok) {
-          console.error('[SocialShareTab] Failed to delete custom thumbnail from server:', response.statusText);
-        } else {
-          console.log('[SocialShareTab] Custom thumbnail deleted from server successfully');
-        }
+      const response = await fetch('/api/improve-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentTitle: shareTitle,
+          currentDescription: shareDescription,
+          clientName: activeClientName
+        })
+      });
+      const data = await response.json();
+      if (data && data.success && data.title && data.description) {
+        setShareTitle(data.title);
+        setShareDescription(data.description);
       }
     } catch (err) {
-      console.error('[SocialShareTab] Network error saving custom thumbnail to server:', err);
+      console.warn('[handleImproveText] API call error:', err);
+    } finally {
+      setIsImprovingText(false);
     }
   };
 
-  const syncCoordinatesToServer = (img: string | null, px: number, py: number) => {
-    if (syncTimeoutRef.current) {
-      clearTimeout(syncTimeoutRef.current);
-    }
-    syncTimeoutRef.current = setTimeout(() => {
-      saveThumbnailToServer(img, px, py);
-    }, 500);
-  };
+  const formattedImageUrl = formatDriveUrl(imageUrlInput);
 
-  const updatePosX = (val: number) => {
-    setPosX(val);
-    localStorage.setItem(`mk_custom_thumbnail_pos_x_${activeClientId}`, val.toString());
-    if (customThumbnail) {
-      syncCoordinatesToServer(customThumbnail, val, posY);
-    }
-  };
+  // Load existing Open Graph settings on mount
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
 
-  const updatePosY = (val: number) => {
-    setPosY(val);
-    localStorage.setItem(`mk_custom_thumbnail_pos_y_${activeClientId}`, val.toString());
-    if (customThumbnail) {
-      syncCoordinatesToServer(customThumbnail, posX, val);
-    }
-  };
-
-  const shareUrl = `https://mandk-app-394492155492.us-west1.run.app/?client=${activeClientId}`;
-  const shareText = `Check out our brand new customer feedback and review portal for ${activeClientName}! Scan our QR code or tap the link to share your experience with us! 🚀🔧🌟`;
-
-  const copyToClipboard = (text: string, type: 'link' | 'text') => {
-    navigator.clipboard.writeText(text);
-    if (type === 'link') {
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    } else {
-      setCopiedText(true);
-      setTimeout(() => setCopiedText(false), 2000);
-    }
-  };
-
-  const handleFile = (file: File) => {
-    setUploadError(null);
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Please upload an image file (PNG, JPG, WEBP, or GIF).');
-      return;
-    }
-    
-    // Check file size (limit to 4.5MB for browser storage efficiency)
-    if (file.size > 4.5 * 1024 * 1024) {
-      setUploadError('File size is too large (maximum 4.5MB).');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Data = e.target?.result as string;
-      if (base64Data) {
-        try {
-          setCustomThumbnail(base64Data);
-          localStorage.setItem(`mk_custom_thumbnail_${activeClientId}`, base64Data);
-          saveThumbnailToServer(base64Data, posX, posY);
-        } catch (error) {
-          setUploadError('Browser storage is full. Please try a smaller image.');
+    fetch(`/api/custom-thumbnail-info?client=${encodeURIComponent(activeClientId)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        if (data && data.exists) {
+          if (data.imageUrl) setImageUrlInput(data.imageUrl);
+          else setImageUrlInput(DEFAULT_IMAGE);
+          
+          if (typeof data.posX === 'number') setPosX(data.posX);
+          if (typeof data.posY === 'number') setPosY(data.posY);
+          if (data.ogTitle) setShareTitle(data.ogTitle);
+          else setShareTitle(DEFAULT_TITLE);
+          if (data.ogDescription) setShareDescription(data.ogDescription);
+          else setShareDescription(DEFAULT_DESC);
+        } else {
+          setImageUrlInput(DEFAULT_IMAGE);
+          setShareTitle(DEFAULT_TITLE);
+          setShareDescription(DEFAULT_DESC);
         }
+      })
+      .catch((err) => {
+        console.warn('[SocialShareTab] Error loading thumbnail info:', err);
+        if (isMounted) {
+          setImageUrlInput(DEFAULT_IMAGE);
+          setShareTitle(DEFAULT_TITLE);
+          setShareDescription(DEFAULT_DESC);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeClientId, isWArts, isSpanish]);
+
+  // Handle URL input change with auto-formatting for Google Drive links
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const formatted = formatDriveUrl(raw);
+    setImageUrlInput(formatted);
+  };
+
+  // Render 1200x630 canvas to generate exact base64 image for server storage
+  const generateCanvasBase64 = (imgSrc: string, xPct: number, yPct: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1200;
+        canvas.height = 630;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve('');
+          return;
+        }
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 1200, 630);
+
+        const targetRatio = 1200 / 630;
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+
+        let renderWidth = 1200;
+        let renderHeight = 630;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (imgRatio > targetRatio) {
+          renderHeight = 630;
+          renderWidth = 630 * imgRatio;
+          const extraX = renderWidth - 1200;
+          offsetX = -(extraX * (xPct / 100));
+        } else {
+          renderWidth = 1200;
+          renderHeight = 1200 / imgRatio;
+          const extraY = renderHeight - 630;
+          offsetY = -(extraY * (yPct / 100));
+        }
+
+        ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+        try {
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          resolve(dataUrl);
+        } catch (e) {
+          console.warn('[SocialShareTab] Canvas cross-origin export failed, proceeding with image URL:', e);
+          resolve('');
+        }
+      };
+      img.onerror = () => resolve('');
+
+      // If imgSrc is a remote URL, pass through our server proxy to guarantee CORS permission
+      if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://')) {
+        img.src = `/api/proxy-image?url=${encodeURIComponent(imgSrc)}`;
+      } else {
+        img.src = imgSrc;
       }
-    };
-    reader.onerror = () => {
-      setUploadError('Error reading file. Please try again.');
-    };
-    reader.readAsDataURL(file);
+    });
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  // Save Open Graph Thumbnail and metadata to server
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveSuccess(false);
+    setSaveError(null);
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
+    const activeImage = formattedImageUrl || DEFAULT_IMAGE;
+    
+    // Attempt rendering 1200x630 canvas
+    const canvasBase64 = await generateCanvasBase64(activeImage, posX, posY);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFile(e.dataTransfer.files[0]);
+    try {
+      const response = await fetch('/api/custom-thumbnail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: activeClientId,
+          image: canvasBase64 || activeImage,
+          imageUrl: activeImage,
+          posX,
+          posY,
+          ogTitle: shareTitle.trim() || DEFAULT_TITLE,
+          ogDescription: shareDescription.trim() || DEFAULT_DESC
+        })
+      });
+
+      if (response.ok) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 4000);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setSaveError(data.error || 'Failed to save Open Graph settings.');
+      }
+    } catch (err: any) {
+      console.error('[SocialShareTab] Save error:', err);
+      setSaveError('Network error while saving settings.');
+    } finally {
+      setSaving(false);
     }
   };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFile(e.target.files[0]);
-    }
-  };
-
-  const handleReset = () => {
-    setCustomThumbnail(null);
-    localStorage.removeItem(`mk_custom_thumbnail_${activeClientId}`);
-    localStorage.removeItem(`mk_custom_thumbnail_pos_x_${activeClientId}`);
-    localStorage.removeItem(`mk_custom_thumbnail_pos_y_${activeClientId}`);
-    setPosX(50);
-    setPosY(50);
-    setUploadError(null);
-    saveThumbnailToServer(null, 50, 50);
-  };
-
-  const currentThumbnail = customThumbnail || socialThumbnail;
 
   return (
-    <div className="space-y-6">
-      {/* Overview Card */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 relative overflow-hidden border border-slate-800 shadow-xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-red-650/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-        <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-slate-800/20 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 text-left">
-            <span className="px-2.5 py-1 text-[10px] font-extrabold bg-red-500/10 border border-red-500/20 text-red-400 rounded-md uppercase tracking-wider">
-              Social Presence
-            </span>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
-              Social Media & Sharing Hub
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-350 max-w-2xl leading-relaxed">
-              Ensure high-fidelity visuals whenever customers or team members share the <strong>{activeClientName}</strong> portal online. Beautiful Open Graph metadata is baked-in.
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Integrated Page Header & Live Link Toolbar */}
+      <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-semibold uppercase tracking-wider mb-2">
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{t('social.controlTag', 'Open Graph Metadata Control')}</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              {t('social.title', 'Social Share Card & Thumbnail Generator')}
+            </h1>
+            <p className="text-slate-500 text-xs mt-1">
+              {t('social.desc', 'Configure the Open Graph thumbnail, title, and description displayed automatically when pasting your app link into Facebook or social platforms.')}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2.5 shrink-0">
+          {saveSuccess && (
+            <div className="px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs shrink-0 animate-fade-in">
+              <Check className="w-4 h-4 text-emerald-600" />
+              <span>{t('social.saved', 'Settings Saved!')}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Integrated Live Link Bar inside Header */}
+        <div className="pt-4 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="p-1.5 bg-red-50 text-red-600 rounded-lg border border-red-100 shrink-0">
+              <Link2 className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-900 shrink-0">{t('social.shareableLinkLabel', 'Card Generation Link')}:</span>
+              <p className="text-xs font-mono font-semibold text-red-600 truncate select-all bg-red-50/60 px-2.5 py-1 rounded-md border border-red-100/80">
+                {getShareableUrl()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => copyToClipboard(shareUrl, 'link')}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-white text-xs font-bold rounded-xl transition-all border border-slate-700/60 flex items-center gap-1.5 cursor-pointer active:scale-95"
+              type="button"
+              onClick={handleCopyShareableUrl}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+                copiedLink
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+              }`}
             >
               {copiedLink ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Copied Link!</span>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{t('social.copied', 'Copied!')}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copy Portal Link</span>
+                  <span>{t('social.copyLink', 'Copy Link')}</span>
                 </>
               )}
             </button>
+
             <a
-              href={shareUrl}
+              href={getShareableUrl()}
               target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-lg shadow-red-900/10"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-200 shrink-0"
+              title="Open link in a new tab"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Launch Live Portal</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">{t('social.openLink', 'Open')}</span>
+            </a>
+
+            <a
+              href={`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(getShareableUrl())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-blue-200 shrink-0"
+              title="Test & scrape link in Facebook Sharing Debugger"
+            >
+              <Globe className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">{t('social.testFacebook', 'Facebook Debugger')}</span>
             </a>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: sharing controls and copying */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Custom Social Thumbnail Uploader */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs text-left space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Form Column */}
+        <div className="lg:col-span-5 space-y-5">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-5">
+            {/* Image URL Input */}
             <div>
-              <h3 className="font-extrabold text-slate-950 text-sm">Portal Thumbnail Image</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Customize the preview image displayed when sharing the link online.</p>
-            </div>
-
-            {/* Drag & Drop Zone */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all ${
-                isDragging 
-                  ? 'border-red-500 bg-red-50/30 shadow-inner' 
-                  : 'border-slate-200 hover:border-red-500 hover:bg-slate-50/50'
-              }`}
-            >
+              <label className="block text-xs font-bold text-slate-900 mb-1.5 flex items-center justify-between">
+                <span>{t('social.imageUrlLabel', 'Image URL')}</span>
+                <ImageIcon className="w-3.5 h-3.5 text-slate-400" />
+              </label>
               <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*"
-                className="hidden"
+                type="url"
+                value={imageUrlInput}
+                onChange={handleUrlChange}
+                placeholder={t('social.imageUrlPlaceholder', 'Paste direct image URL or Google Drive link...')}
+                className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all font-mono"
               />
-              <div className="flex flex-col items-center justify-center space-y-2">
-                <div className={`p-3 rounded-xl transition-colors ${isDragging ? 'bg-red-100 text-red-600' : 'bg-slate-50 text-slate-400'}`}>
-                  <Upload className="w-5 h-5 animate-pulse" />
+              <span className="text-[11px] text-slate-400 block mt-1">
+                {t('social.imageUrlHint', 'Supports direct image URLs and Google Drive shared links.')}
+              </span>
+            </div>
+
+            {/* Image Position Adjustment */}
+            <div className="space-y-3 pt-1 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-900">{t('social.positionLabel', 'Image Position')}</label>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => { setPosX(50); setPosY(15); }}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-semibold flex items-center gap-1 cursor-pointer"
+                    title={t('social.headFocusTitle', 'Focus on Top / Face Area')}
+                  >
+                    <ArrowUp className="w-3 h-3 text-red-600" />
+                    <span>{t('social.headFocus', 'Head Focus')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPosX(50); setPosY(50); }}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-semibold flex items-center gap-1 cursor-pointer"
+                    title={t('social.centerTitle', 'Center Image')}
+                  >
+                    <AlignCenter className="w-3 h-3 text-slate-600" />
+                    <span>{t('social.center', 'Center')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPosX(50); setPosY(85); }}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-semibold flex items-center gap-1 cursor-pointer"
+                    title={t('social.bottomTitle', 'Focus on Bottom Area')}
+                  >
+                    <ArrowDown className="w-3 h-3 text-slate-600" />
+                    <span>{t('social.bottom', 'Bottom')}</span>
+                  </button>
                 </div>
-                <div>
-                  <span className="block text-xs font-bold text-slate-700">Drag & drop thumbnail</span>
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">or click to browse local files</span>
+              </div>
+
+              {/* Vertical Y Slider */}
+              <div>
+                <div className="flex justify-between text-[11px] text-slate-600 font-medium mb-1">
+                  <span>{t('social.vertPos', 'Vertical Position (Y):')}</span>
+                  <span className="font-mono text-slate-900 font-bold">{posY}%</span>
                 </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={posY}
+                  onChange={(e) => setPosY(Number(e.target.value))}
+                  className="w-full accent-red-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                />
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  {t('social.vertPosHint', 'Adjust vertically to ensure heads and faces are completely visible.')}
+                </span>
+              </div>
+
+              {/* Horizontal X Slider */}
+              <div>
+                <div className="flex justify-between text-[11px] text-slate-600 font-medium mb-1">
+                  <span>{t('social.horizPos', 'Horizontal Position (X):')}</span>
+                  <span className="font-mono text-slate-900 font-bold">{posX}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={posX}
+                  onChange={(e) => setPosX(Number(e.target.value))}
+                  className="w-full accent-red-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                />
               </div>
             </div>
 
-            {/* Error Message */}
-            {uploadError && (
-              <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-[11px] text-red-700 leading-normal">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-600" />
-                <span>{uploadError}</span>
-              </div>
+            {/* AI Improve Text Control (Review Benefits) */}
+            <div className="pt-3 border-t border-slate-100 flex flex-col items-start gap-1.5">
+              <button
+                type="button"
+                onClick={handleImproveText}
+                disabled={isImprovingText}
+                className="px-4 py-2.5 bg-yellow-400 hover:bg-yellow-500 active:scale-95 text-slate-900 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer border border-amber-300 select-none disabled:opacity-50"
+                id="improve-og-text-btn"
+              >
+                <Sparkles className="w-4 h-4 fill-slate-900 text-slate-900 shrink-0" />
+                <span>{isImprovingText ? t('social.improving', 'Improving...') : t('social.improveText', 'Improve Text')}</span>
+              </button>
+              <span className="text-[11px] text-slate-500 font-medium">
+                {t('social.improveHint', 'Click again for a new version, feel free to edit.')}
+              </span>
+            </div>
+
+            {/* Share Title Input */}
+            <div>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                {t('social.shareTitleLabel', 'Share Title')}
+              </label>
+              <input
+                type="text"
+                value={shareTitle}
+                onChange={(e) => setShareTitle(e.target.value)}
+                placeholder={DEFAULT_TITLE}
+                className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all font-semibold text-slate-900"
+              />
+            </div>
+
+            {/* Description Input */}
+            <div>
+              <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                {t('social.descriptionLabel', 'Description')}
+              </label>
+              <textarea
+                value={shareDescription}
+                onChange={(e) => setShareDescription(e.target.value)}
+                placeholder={DEFAULT_DESC}
+                rows={3}
+                className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-all text-slate-700"
+              />
+            </div>
+
+            {/* Save Button */}
+            {saveError && (
+              <p className="text-xs text-red-600 font-semibold bg-red-50 p-2.5 rounded-xl border border-red-200">
+                {saveError}
+              </p>
             )}
 
-            {/* Image Preview & Controls */}
-            <div className="space-y-4">
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                Active Image Source
-              </label>
-              
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 relative animate-fade-in">
-                  <img 
-                    src={currentThumbnail} 
-                    alt="Active Thumbnail" 
-                    className="w-full h-full object-cover transition-all"
-                    style={{ objectPosition: `${posX}% ${posY}%` }}
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <span className="block text-xs font-bold text-slate-800 truncate">
-                    {customThumbnail ? 'Custom Image' : 'Default Cover'}
-                  </span>
-                  <span className="text-[10px] text-slate-450 block truncate">
-                    {customThumbnail ? 'Stored locally in browser' : 'Default template cover'}
-                  </span>
-                </div>
-
-                {customThumbnail && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReset();
-                    }}
-                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-                    title="Reset to Default"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Image Repositioning Controls */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Reposition Image</span>
-                  </span>
-                  <button
-                    onClick={() => {
-                      updatePosX(50);
-                      updatePosY(50);
-                    }}
-                    className="text-[10px] font-bold text-red-650 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Reset Position</span>
-                  </button>
-                </div>
-
-                {/* Slider for Horizontal Position */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                    <span>Horizontal (X)</span>
-                    <span className="font-mono text-slate-400">{posX}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={posX}
-                    onChange={(e) => updatePosX(parseInt(e.target.value, 10))}
-                    className="w-full accent-red-600 bg-slate-100 rounded-lg appearance-none h-1.5 cursor-ew-resize"
-                  />
-                </div>
-
-                {/* Slider for Vertical Position */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                    <span>Vertical (Y)</span>
-                    <span className="font-mono text-slate-400">{posY}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={posY}
-                    onChange={(e) => updatePosY(parseInt(e.target.value, 10))}
-                    className="w-full accent-red-600 bg-slate-100 rounded-lg appearance-none h-1.5 cursor-ns-resize"
-                  />
-                </div>
-
-                {/* Quick Alignment Presets Grid */}
-                <div className="space-y-2">
-                  <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quick Snap Presets</span>
-                  <div className="grid grid-cols-3 gap-1 max-w-[150px]">
-                    {[
-                      { label: '↖', x: 0, y: 0, title: 'Top Left' },
-                      { label: '↑', x: 50, y: 0, title: 'Top Center' },
-                      { label: '↗', x: 100, y: 0, title: 'Top Right' },
-                      { label: '←', x: 0, y: 50, title: 'Middle Left' },
-                      { label: '•', x: 50, y: 50, title: 'Center' },
-                      { label: '→', x: 100, y: 50, title: 'Middle Right' },
-                      { label: '↙', x: 0, y: 100, title: 'Bottom Left' },
-                      { label: '↓', x: 50, y: 100, title: 'Bottom Center' },
-                      { label: '↘', x: 100, y: 100, title: 'Bottom Right' }
-                    ].map((preset, idx) => {
-                      const isSelected = posX === preset.x && posY === preset.y;
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            updatePosX(preset.x);
-                            updatePosY(preset.y);
-                          }}
-                          title={preset.title}
-                          className={`h-7 rounded text-xs font-bold transition-all flex items-center justify-center border cursor-pointer ${
-                            isSelected
-                              ? 'bg-red-550 border-red-550 text-white shadow-xs'
-                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
-                          }`}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs text-left space-y-5">
-            <div>
-              <h3 className="font-extrabold text-slate-950 text-sm">Quick Share Composer</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Use this pre-generated copy to announce your portal on social channels.</p>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Pre-crafted Post Content
-                </label>
-                <div className="relative">
-                  <textarea
-                    readOnly
-                    value={shareText}
-                    className="w-full h-32 bg-slate-50 border border-slate-150 rounded-xl p-3 text-xs text-slate-700 focus:outline-none resize-none font-medium leading-relaxed"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(shareText, 'text')}
-                    className="absolute bottom-2.5 right-2.5 p-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg hover:text-slate-900 transition-colors shadow-xs"
-                    title="Copy Text"
-                  >
-                    {copiedText ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Direct Share Link
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={shareUrl}
-                    className="flex-1 bg-slate-50 border border-slate-150 rounded-xl px-3 py-2 text-xs text-slate-500 font-mono overflow-ellipsis"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(shareUrl, 'link')}
-                    className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
-                  >
-                    {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-100 pt-4 flex flex-col gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Useful tips</span>
-              <ul className="space-y-2">
-                <li className="flex gap-2 text-[11px] text-slate-600 leading-normal">
-                  <span className="text-red-500">🔧</span>
-                  <span><strong>Pin to Bio:</strong> Place your direct portal link on your Instagram, Facebook, and Twitter business bios.</span>
-                </li>
-                <li className="flex gap-2 text-[11px] text-slate-600 leading-normal">
-                  <span className="text-red-500">🌟</span>
-                  <span><strong>Email Footers:</strong> Embed the link in automated invoice and shipment notification emails to collect review signals.</span>
-                </li>
-              </ul>
-            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || loading}
+              className="w-full py-3.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>{t('social.saving', 'Saving Open Graph Settings...')}</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>{t('social.saveBtn', 'SAVE OPEN GRAPH SETTINGS')}</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Right column: Interactive mockup previews */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs text-left">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
-              <div>
-                <h3 className="font-extrabold text-slate-950 text-base">Interactive Feed Preview</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Toggle platforms to preview how major social crawlers render the link card.</p>
-              </div>
-
-              {/* Platform Switcher Tabs */}
-              <div className="flex bg-slate-100 p-1 rounded-xl gap-0.5 self-start sm:self-auto shrink-0">
+        {/* Right Preview Column */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-red-600" />
+                <span>{t('social.simulatedPreview', 'Social Link Card Preview')}</span>
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
+                  1200 × 630 px
+                </span>
                 <button
-                  onClick={() => setActivePlatform('facebook')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activePlatform === 'facebook'
-                      ? 'bg-white text-blue-650 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                  type="button"
+                  onClick={handleCopyShareableUrl}
+                  className="text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                 >
-                  <Facebook className="w-3.5 h-3.5 shrink-0" />
-                  <span>Facebook</span>
-                </button>
-                <button
-                  onClick={() => setActivePlatform('twitter')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activePlatform === 'twitter'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <Twitter className="w-3.5 h-3.5 shrink-0" />
-                  <span>Twitter / X</span>
-                </button>
-                <button
-                  onClick={() => setActivePlatform('linkedin')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activePlatform === 'linkedin'
-                      ? 'bg-white text-blue-800 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <Linkedin className="w-3.5 h-3.5 shrink-0" />
-                  <span>LinkedIn</span>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>{copiedLink ? t('social.copied', 'Copied!') : t('social.copyCardLink', 'Copy Link')}</span>
                 </button>
               </div>
             </div>
 
-            {/* Simulated Feed Posts based on Platform */}
+            {/* Facebook Share Card Simulation */}
             <div className="space-y-4">
-              {activePlatform === 'facebook' && (
-                <div className="p-4 bg-white rounded-2xl border border-slate-200 max-w-xl mx-auto shadow-2xs">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-black text-white text-sm">
-                      M
-                    </div>
-                    <div>
-                      <span className="block text-xs font-black text-slate-900 leading-none">{activeClientName}</span>
-                      <span className="text-[10px] text-slate-450 mt-1 block">Sponsored · Paid Announcement</span>
-                    </div>
+              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 shadow-xs">
+                {/* Simulated Thumbnail */}
+                <div className="w-full aspect-[1200/630] bg-slate-900 overflow-hidden relative">
+                  <img
+                    src={formattedImageUrl || DEFAULT_IMAGE}
+                    alt="Simulated share thumbnail"
+                    className="w-full h-full object-cover transition-all duration-150"
+                    style={{
+                      objectPosition: `${posX}% ${posY}%`
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = DEFAULT_IMAGE;
+                    }}
+                  />
+                  <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-mono px-2.5 py-1 rounded-md border border-white/10">
+                    1200 × 630 px preview
                   </div>
-                  <p className="text-xs text-slate-750 mb-3 text-left leading-relaxed">
-                    We appreciate our clients so much! Scan our QR counter standee or visit the link below to share your rating with us instantly. 🚀🔧🌟
+                </div>
+
+                {/* Simulated Text Block */}
+                <div className="p-4 bg-[rgb(240,242,245)] border-t border-slate-200 space-y-1">
+                  <p className="text-[10px] font-mono uppercase text-slate-500 truncate">
+                    {DEFAULT_DOMAIN}
                   </p>
-
-                  {/* Facebook OG Card */}
-                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-[#f2f3f5] shadow-2xs cursor-pointer hover:bg-slate-50 transition-colors">
-                    <div className="aspect-square w-full relative bg-slate-100 animate-fade-in">
-                      <img
-                        src={currentThumbnail}
-                        alt="Facebook Social Share"
-                        className="w-full h-full object-cover transition-all"
-                        style={{ objectPosition: `${posX}% ${posY}%` }}
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="p-3 text-left">
-                      <span className="text-[9px] text-slate-450 uppercase font-bold tracking-wider">
-                        mandk-app-394492155492.us-west1.run.app
-                      </span>
-                      <h4 className="text-xs font-extrabold text-slate-900 mt-0.5 line-clamp-1">
-                        M&K Customer Feedback Portal
-                      </h4>
-                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                        An intelligent feedback collection and automated review drafting portal for M&K Auto Parts. Features real-time Google Sheets tracking and direct Gmail delivery.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activePlatform === 'twitter' && (
-                <div className="p-4 bg-white rounded-2xl border border-slate-200 max-w-xl mx-auto shadow-2xs">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center font-black text-white text-sm shrink-0">
-                      𝕏
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-black text-slate-900 leading-none">{activeClientName}</span>
-                        <span className="text-[10px] text-slate-450">@MandKParts · Just now</span>
-                      </div>
-                      <p className="text-xs text-slate-800 mt-2 mb-3 text-left leading-relaxed">
-                        To serve you better, we've launched our new automated feedback and review workflow. Share your rating with us in seconds! 👇⚙️
-                      </p>
-
-                      {/* Twitter Card */}
-                      <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs cursor-pointer hover:border-slate-300 transition-all">
-                        <div className="aspect-square w-full relative bg-slate-100 animate-fade-in">
-                          <img
-                            src={currentThumbnail}
-                            alt="Twitter Card"
-                            className="w-full h-full object-cover transition-all"
-                            style={{ objectPosition: `${posX}% ${posY}%` }}
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                        <div className="p-3 text-left">
-                          <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
-                            <Globe className="w-2.5 h-2.5" />
-                            <span>mandk-app-394492155492.us-west1.run.app</span>
-                          </div>
-                          <h4 className="text-xs font-bold text-slate-900 mt-0.5 line-clamp-1">
-                            M&K Customer Feedback Portal
-                          </h4>
-                          <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
-                            Live workflow automation and intelligent feedback triggers.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activePlatform === 'linkedin' && (
-                <div className="p-4 bg-white rounded-2xl border border-slate-200 max-w-xl mx-auto shadow-2xs">
-                  <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-9 h-9 rounded-md bg-blue-850 flex items-center justify-center font-black text-white text-sm">
-                      in
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-900 leading-none">{activeClientName}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">• 1st</span>
-                      </div>
-                      <span className="text-[10px] text-slate-450 mt-1 block">Automotive Logistics & Remanufacturing</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-750 mb-3 text-left leading-relaxed">
-                    We are excited to share our latest technology milestone! An automated custom feedback and review portal utilizing live Google integrations and real-time review dispatching.
+                  <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-1">
+                    {shareTitle || DEFAULT_TITLE}
+                  </h4>
+                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                    {shareDescription || DEFAULT_DESC}
                   </p>
-
-                  {/* LinkedIn Share Card */}
-                  <div className="border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100/50 transition-colors text-left">
-                    <div className="aspect-square w-full relative bg-slate-100 animate-fade-in">
-                      <img
-                        src={currentThumbnail}
-                        alt="LinkedIn Social Share"
-                        className="w-full h-full object-cover transition-all"
-                        style={{ objectPosition: `${posX}% ${posY}%` }}
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="p-3 border-t border-slate-150">
-                      <h4 className="text-xs font-extrabold text-slate-800 line-clamp-1">
-                        M&K Customer Feedback Portal
-                      </h4>
-                      <span className="text-[10px] text-slate-500 mt-1 block">
-                        mandk-app-394492155492.us-west1.run.app
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              )}
-            </div>
-
-            <div className="p-4 bg-amber-50/70 border border-amber-200/50 rounded-2xl text-left text-xs text-slate-700 flex items-start gap-3 mt-6 leading-relaxed">
-              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <strong>Automated Crawl Synchronization:</strong> The application includes fully standard <code>&lt;meta&gt;</code> elements in the header of <code>index.html</code>. When social media scrapers request your portal's URL, the platforms automatically extract the high-resolution graphics, correct title, and portal descriptions perfectly.
               </div>
             </div>
           </div>

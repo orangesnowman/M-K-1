@@ -56,17 +56,29 @@ export default function FeedbackPipelineSetup({
   const [deploymentLog, setDeploymentLog] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const formatExceptionMessage = (err: any) => {
-    const msg = String(err.message || err);
-    const lower = msg.toLowerCase();
-    if (
+  const isAuthException = (msg: string): boolean => {
+    const lower = String(msg || '').toLowerCase();
+    if (lower.includes('unexpected token') || lower.includes('not valid json') || lower.includes('syntaxerror')) {
+      return false;
+    }
+    return (
       lower.includes('authentication') ||
       lower.includes('credential') ||
       lower.includes('oauth') ||
       lower.includes('unauthorized') ||
-      lower.includes('token') ||
-      msg.includes('401')
-    ) {
+      lower.includes('invalid_grant') ||
+      lower.includes('access_token') ||
+      lower.includes('auth_token') ||
+      lower.includes('expired token') ||
+      lower.includes('token expired') ||
+      lower.includes('401')
+    );
+  };
+
+  const formatExceptionMessage = (err: any) => {
+    const msg = String(err.message || err);
+    const lower = msg.toLowerCase();
+    if (isAuthException(msg)) {
       return `${msg}. 💡 Help: Google Authorization is expired, missing, or needs fresh permissions! Click "Re-authorize Google" or "Connect Google Account" at the very top right of the page to refresh your token and accept permissions.`;
     }
     if (
@@ -303,12 +315,7 @@ export default function FeedbackPipelineSetup({
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 animate-pulse text-red-500" />
                       <span>{errorMessage}</span>
                     </div>
-                    {(errorMessage.toLowerCase().includes('authorization') || 
-                      errorMessage.toLowerCase().includes('credential') || 
-                      errorMessage.toLowerCase().includes('oauth') || 
-                      errorMessage.toLowerCase().includes('unauthorized') || 
-                      errorMessage.toLowerCase().includes('token') || 
-                      errorMessage.includes('401')) && onLogin && (
+                    {isAuthException(errorMessage) && onLogin && (
                       <div className="pt-1 select-none">
                         <button
                           type="button"

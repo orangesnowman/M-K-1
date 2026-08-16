@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ReviewRecord, Client } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 import {
   BarChart,
   Bar,
@@ -68,6 +69,7 @@ export default function ReviewsDashboard({
   onLogin,
   onImportReviews
 }: ReviewsDashboardProps) {
+  const { t } = useLanguage();
   const [selectedClientFilter, setSelectedClientFilter] = useState<string>('active'); // 'active', 'all', or specific id
   const [ratingFilter, setRatingFilter] = useState<string>('all'); // 'all', 'positive', 'neutral', 'negative', or '5','4','3','2','1'
   const [originFilter, setOriginFilter] = useState<string>('all'); // 'all', 'real-gmb', 'sim-gmb', 'sandbox', 'demo'
@@ -502,10 +504,10 @@ export default function ReviewsDashboard({
         <div>
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-zinc-900" />
-            <h2 className="text-base font-extrabold text-zinc-900 uppercase tracking-wider">Reviews & Ratings Analytics</h2>
+            <h2 className="text-base font-extrabold text-zinc-900 uppercase tracking-wider">{t('dash.title', 'Reviews & Ratings Analytics')}</h2>
           </div>
           <p className="text-xs text-zinc-500 mt-1">
-            Real-time visual reports of customer sentiments, email escalations, and sync health.
+            {t('dash.subtitle', 'Real-time visual reports of customer sentiments, email escalations, and sync health.')}
           </p>
         </div>
 
@@ -516,7 +518,7 @@ export default function ReviewsDashboard({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 rounded-xl transition-colors border border-emerald-150 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Seed Demo Data</span>
+              <span>{t('dash.seedDemo', 'Seed Demo Data')}</span>
             </button>
           )}
 
@@ -530,7 +532,7 @@ export default function ReviewsDashboard({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-rose-100 cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Reset Logs</span>
+              <span>{t('dash.resetLogs', 'Reset Logs')}</span>
             </button>
           )}
 
@@ -548,13 +550,13 @@ export default function ReviewsDashboard({
       <div className="bg-white p-5 rounded-3xl border border-zinc-200/80 shadow-xs flex flex-col gap-4">
         <div className="flex items-center gap-2 pb-2 border-b border-zinc-100">
           <Filter className="w-4 h-4 text-zinc-400" />
-          <h3 className="text-xs font-bold text-zinc-700 uppercase tracking-wider">Filter Pipeline Records</h3>
+          <h3 className="text-xs font-bold text-zinc-700 uppercase tracking-wider">{t('dash.filterTitle', 'Filter Pipeline Records')}</h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Workspace Filter */}
           <div className="space-y-1.5 text-left">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Workspace Context</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{t('dash.workspaceContext', 'Workspace Context')}</label>
             <select
               value={selectedClientFilter}
               onChange={(e) => setSelectedClientFilter(e.target.value)}

@@ -65,7 +65,7 @@ async function handleResponse(response: Response, errorContext: string): Promise
       const title = titleMatch ? titleMatch[1] : 'HTML Page';
       throw new Error(`${errorContext}: Expected JSON response but received HTML page (${title}).`);
     }
-    throw new Error(`${errorContext}: Failed to parse JSON response: ${e.message}. Raw text: ${text.substring(0, 100)}...`);
+    throw new Error(`${errorContext}: Received non-JSON response from server (Status ${response.status}).`);
   }
 }
 

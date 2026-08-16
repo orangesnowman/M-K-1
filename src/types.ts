@@ -25,6 +25,7 @@ export interface RoutingConfiguration {
   businessSignature?: string;
   companyLogoUrl?: string;
   googleReviewsUrl: string;
+  privateFeedbackUrl?: string;
   starThreshold: number;
   yelpEnabled: boolean;
   yelpUrl: string;
@@ -37,10 +38,15 @@ export interface RoutingConfiguration {
 export interface Client {
   id: string;
   name: string;
+  language?: 'en' | 'es';
   appUrl?: string;
   logoUrl?: string;
   portalTitle?: string;
   portalSubtitle?: string;
+  titleFont?: string;
+  titleFontSize?: string;
+  titleColor?: string;
+  subtitleColor?: string;
   resources: WorkspaceResources;
   routingConfig: RoutingConfiguration;
 }
