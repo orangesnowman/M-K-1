@@ -1059,9 +1059,15 @@ export default function PipelineSandbox({
     } else {
       try {
         const reviewUrl = getEffectiveGoogleReviewsUrl();
-        window.location.href = reviewUrl;
+        // Keep the feedback portal open on the sharing step while the customer
+        // completes the Google review in a separate tab/window.
+        window.open(reviewUrl, '_blank', 'noopener,noreferrer');
+        setVisitedPlatforms(prev => [
+          ...prev.filter(name => name !== (isSpanish ? 'Directorio de Google' : 'Google Directory')),
+          isSpanish ? 'Directorio de Google' : 'Google Directory'
+        ]);
       } catch (e) {
-        console.warn("Direct navigation error:", e);
+        console.warn("Review window error:", e);
       }
     }
 
