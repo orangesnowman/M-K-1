@@ -470,11 +470,12 @@ export default function PipelineSandbox({
       });
     }
 
-    const yelpEnabled = isWArts ? false : routingConfig.yelpEnabled;
-    if (yelpEnabled && routingConfig.yelpUrl) {
+    const yelpEnabled = !isWArts;
+    const yelpUrl = routingConfig.yelpUrl || 'https://www.yelp.com/search?find_desc=M%26K%20Used%20Auto%20Parts&find_loc=Vero%20Beach%2C%20FL';
+    if (yelpEnabled) {
       list.push({ 
         name: 'Yelp', 
-        url: routingConfig.yelpUrl, 
+        url: yelpUrl, 
         color: 'bg-[#d32323]', 
         hoverColor: 'hover:bg-[#b01d1d]' 
       });
@@ -1216,7 +1217,10 @@ export default function PipelineSandbox({
                       );
                     }
 
-                    if (visitedPlatforms.length === 0) {
+                    const googlePlatformName = isSpanish ? 'Directorio de Google' : 'Google Directory';
+                    const isReturningFromGoogle = visitedPlatforms.length === 1 && visitedPlatforms[0] === googlePlatformName;
+
+                    if (visitedPlatforms.length === 0 || isReturningFromGoogle) {
                       // First step of positive flow: Show all enabled platforms to let them choose or skip
                       return (
                         <div className={isCurrentlyPublished ? "space-y-5 animate-fade-in" : "bg-slate-950 p-6 rounded-3xl border border-slate-900 shadow-xl text-left space-y-5 animate-fade-in"} id="share-step-1">
