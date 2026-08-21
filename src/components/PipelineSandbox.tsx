@@ -511,12 +511,15 @@ export default function PipelineSandbox({
 
   const handleSharePlatformClick = (platform: { name: string; url: string; isEmail?: boolean; isGoogle?: boolean }) => {
     try {
-      window.location.href = platform.url;
+      window.open(platform.url, '_blank', 'noopener,noreferrer');
     } catch (e) {
-      console.warn("Navigation error:", e);
-      window.location.href = platform.url;
+      console.warn("Platform navigation error:", e);
+      window.open(platform.url, '_blank', 'noopener,noreferrer');
     }
-    setVisitedPlatforms(prev => [...prev, platform.name]);
+    setVisitedPlatforms(prev => [
+      ...prev.filter(name => name !== platform.name),
+      platform.name
+    ]);
   };
 
   const getEffectiveComments = () => {

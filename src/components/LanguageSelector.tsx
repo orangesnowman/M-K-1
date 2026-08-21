@@ -1,5 +1,4 @@
 import React from 'react';
-import { Globe } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface LanguageSelectorProps {
@@ -16,22 +15,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className = 
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 p-1 rounded-full select-none ${
+      className={`inline-flex items-center gap-1 rounded-full select-none ${
         isDark
           ? 'bg-zinc-800/90 hover:bg-zinc-800 border border-zinc-700/80 shadow-sm'
           : 'bg-zinc-100/90 hover:bg-zinc-100 border border-zinc-200/80 shadow-xs'
       } ${className}`}
       id="app-language-selector"
     >
-      <div
-        className={`flex items-center gap-1 px-1.5 py-0.5 ${
-          isDark ? 'text-zinc-300' : 'text-zinc-500'
-        }`}
-        title={language === 'es' ? 'Idioma del portal (Español)' : 'Portal Language (English)'}
-      >
-        <Globe className={`${isSm ? 'w-3.5 h-3.5' : 'w-4 h-4'} shrink-0 ${isDark ? 'text-amber-400' : 'text-zinc-600'}`} />
-      </div>
-
       <div
         className={`flex items-center gap-0.5 p-0.5 rounded-full ${
           isDark
